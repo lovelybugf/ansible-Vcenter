@@ -1,5 +1,5 @@
 ---
-plugin: vmware.vmware.vmware_vm_inventory
+plugin: community.vmware.vmware_vm_inventory
 strict: false
 
 # Thong tin ket noi vCenter de lay danh sach may ao dong
