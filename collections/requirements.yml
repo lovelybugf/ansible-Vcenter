@@ -2,7 +2,6 @@
 collections:
   - name: vmware.vmware
     source: redhat_hub
-    version: 2.9.0
   - name: vmware.vmware_rest
     source: redhat_hub
 ...
