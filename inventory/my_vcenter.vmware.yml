@@ -13,11 +13,6 @@ with_tags: true
 with_custom_values: true
 with_metadata: true
 
-# Loc va quan ly cac VM co nhan (tag) 'amigo-managed'
-# filters:
-#   - "'amigo-managed' in tags"
-
-# Tu dong gan bien ket noi cho cac may ao quet duoc
 compose:
   ansible_user: "'root'"
   ansible_connection: "'ssh'"
