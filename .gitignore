@@ -1,6 +1,8 @@
 # Ignore downloaded roles and collections to keep the Git repo clean
-roles/**
+roles/*
 !roles/requirements.yml
+!roles/vmware_provision/
+!roles/vmware_management/
 
 collections/ansible_collections/
 

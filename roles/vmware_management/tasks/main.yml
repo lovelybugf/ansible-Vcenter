@@ -1,0 +1,6 @@
+---
+# tasks file for vmware_management
+- name: Hien thi thong tin dang nhap vCenter
+  ansible.builtin.debug:
+    msg: "Dang ket noi den vCenter: {{ vcenter_hostname }} voi tai khoan: {{ vcenter_username }}"
+...

@@ -1,0 +1,4 @@
+---
+# vars file for vmware_management (high priority variables)
+role_description: "Role quan tri he thong ao hoa VMware vSphere qua API"
+...

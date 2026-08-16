@@ -1,0 +1,18 @@
+---
+# meta file for vmware_provision
+galaxy_info:
+  author: "Nguyen Duc Nam"
+  description: "Role tu dong hoa tao moi may ao tren vSphere vCenter"
+  company: "Amigo Technologies"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: EL
+      versions:
+        - 9
+  categories:
+    - cloud
+    - system
+
+dependencies: []
+...

@@ -1,0 +1,21 @@
+---
+# defaults file for vmware_provision
+vcenter_hostname: "10.0.55.12"
+vcenter_username: "soft.02"
+vcenter_password: "S0ftware2@!@#"
+vcenter_validate_certs: false
+
+# Thong so ha tang ao hoa mac dinh
+vm_datacenter: "Datacenter-Amigo"
+vm_cluster: "Cluster-Production"
+vm_datastore: "san-datastore-01"
+vm_folder: "/vm/Production"
+vm_network: "VM-Network-VLAN50"
+
+# Thong so phan cung may ao mac dinh
+vm_name: "amigo-web-temp"
+vm_cpu: 2
+vm_ram_mb: 4096
+vm_disk_gb: 50
+vm_state: "poweredon"
+...
