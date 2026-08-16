@@ -6,6 +6,9 @@ ansible-navigator:
     image: quay-ssc2.local.amigo.com/admin/nampd-vmware-ee:v1.2
     pull:
       policy: missing
+    environment-variables:
+      set:
+        ANSIBLE_COLLECTIONS_PATH: "/usr/share/ansible/collections"
   mode: stdout
 
   playbook-artifact:
