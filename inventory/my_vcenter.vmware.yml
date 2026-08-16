@@ -3,10 +3,18 @@ plugin: vmware.vmware.vmware_vm_inventory
 strict: false
 
 # Thong tin ket noi vCenter de lay danh sach may ao dong
-hostname: "vcenter.amigo.lab"
+hostname: "10.0.55.12"
 username: "soft.02"
 password: "S0ftware2@!@#"
 validate_certs: false
+
+# Gioi han cac thuoc tinh can lay tu vCenter de toi uu hoa toc do quet
+properties:
+  - name
+  - summary
+  - config.lockdownMode
+  - guest.guestId
+  - tags
 
 # Nap tag va cac thuoc tinh tuy chinh cua vCenter
 with_tags: true
@@ -16,6 +24,11 @@ with_metadata: true
 # Loc va quan ly cac VM co nhan (tag) 'amigo-managed'
 filters:
   - "'amigo-managed' in tags"
+
+# Tu dong gan bien ket noi cho cac may ao quet duoc
+compose:
+  ansible_user: "'root'"
+  ansible_connection: "'ssh'"
 
 # Tu dong tao cac nhom con de phan loai may ao trong inventory
 keyed_groups:

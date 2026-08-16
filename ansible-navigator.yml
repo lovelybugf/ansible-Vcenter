@@ -3,7 +3,7 @@ ansible-navigator:
   execution-environment:
     container-engine: podman
     enabled: true
-    image: quay.io/ansible/creator-ee:latest
+    image: quay-ssc2.local.amigo.com/admin/nampd-vmware-ee:v1.2
     pull:
       policy: missing
   mode: stdout
