@@ -5,4 +5,6 @@ collections:
     source: redhat_hub
   - name: vmware.vmware_rest
     source: redhat_hub
+  - name: community.vmware
+    source: galaxy
 ...
