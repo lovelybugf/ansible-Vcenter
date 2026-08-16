@@ -12,7 +12,7 @@
     - name: "Goi API vCenter de lay thong tin (Co quan ly loi)"
       block:
         - name: "1. Goi lay danh sach may ao (VMs)"
-          vmware.vmware.vmware_vm_info:
+          community.vmware.vmware_vm_info:
             hostname: "{{ vcenter_hostname }}"
             username: "{{ vcenter_username }}"
             password: "{{ vcenter_password }}"
