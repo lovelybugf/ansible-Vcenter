@@ -19,11 +19,13 @@
             validate_certs: "{{ vcenter_validate_certs }}"
           register: vm_info
 
-        - name: "2. Hien thi danh sach may ao quet duoc"
+        - name: "2. Hien thi danh sach may ao rut gon"
           ansible.builtin.debug:
-            msg: "May ao: {{ item.guest_name }} (Trang thai nguon: {{ item.power_state }})"
-          loop: "{{ vm_info.virtual_machines }}"
-          when: vm_info.virtual_machines | length > 0
+            msg: |
+              Danh sach may ao tim thay tren vCenter:
+              {% for vm in vm_info.virtual_machines %}
+              - Tên: {{ vm.guest_name | default('N/A') }} (Trạng thái: {{ vm.power_state | default('N/A') }})
+              {% endfor %}
 
       rescue:
         - name: "3. Xu ly va canh bao khi mat ket noi API vCenter"
