@@ -10,7 +10,7 @@
     vcenter_validate_certs: false
   tasks:
     - name: 1. Lay thong tin danh sach cac may ao (VMs) tren vCenter
-      community.vmware.vmware_vm_info:
+      vmware.vmware.vmware_vm_info:
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
