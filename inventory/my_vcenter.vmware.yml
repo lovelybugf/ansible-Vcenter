@@ -8,13 +8,6 @@ username: "soft.02"
 password: "S0ftware2@!@#"
 validate_certs: false
 
-# Gioi han cac thuoc tinh can lay tu vCenter de toi uu hoa toc do quet
-properties:
-  - name
-  - summary
-  - config.lockdownMode
-  - guest.guestId
-
 # Nap tag va cac thuoc tinh tuy chinh cua vCenter
 with_tags: true
 with_custom_values: true
