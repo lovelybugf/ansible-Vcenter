@@ -1,0 +1,12 @@
+# Ignore downloaded roles and collections to keep the Git repo clean
+roles/**
+!roles/requirements.yml
+
+collections/ansible_collections/
+
+# Ignore navigator logs and artifacts
+*.log
+*.retry
+.ansible-navigator/
+.idea/
+.vscode/

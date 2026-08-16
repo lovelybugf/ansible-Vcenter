@@ -1,0 +1,25 @@
+---
+- name: Demo tu dong hoa VMware vSphere qua API
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Thong tin ket noi den vCenter (thay doi theo moi truong cua ban)
+    vcenter_hostname: "vcenter.local.amigo.com"
+    vcenter_username: "administrator@vsphere.local"
+    vcenter_password: "YOUR_VCENTER_PASSWORD_HERE"
+    vcenter_validate_certs: false
+  tasks:
+    - name: 1. Lay thong tin danh sach cac may ao (VMs) tren vCenter
+      community.vmware.vmware_vm_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+      register: vm_info
+
+    - name: 2. Hien thi ten cac may ao tim thay
+      ansible.builtin.debug:
+        msg: "Tim thay may ao: {{ item.guest_name }} (Trang thai: {{ item.power_state }})"
+      loop: "{{ vm_info.virtual_machines }}"
+      when: vm_info.virtual_machines | length > 0
+...
