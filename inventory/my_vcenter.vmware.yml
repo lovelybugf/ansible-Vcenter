@@ -21,8 +21,8 @@ with_custom_values: true
 with_metadata: true
 
 # Loc va quan ly cac VM co nhan (tag) 'amigo-managed'
-filters:
-  - "'amigo-managed' in tags"
+# filters:
+#   - "'amigo-managed' in tags"
 
 # Tu dong gan bien ket noi cho cac may ao quet duoc
 compose:
