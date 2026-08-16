@@ -1,7 +1,7 @@
 ---
 # tasks file for vmware_provision
 - name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter (Idempotent)"
-  vmware.vmware.vmware_guest:
+  community.vmware.vmware_guest:
     hostname: "{{ vcenter_hostname }}"
     username: "{{ vcenter_username }}"
     password: "{{ vcenter_password }}"
