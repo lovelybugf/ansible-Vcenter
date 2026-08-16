@@ -1,4 +1,9 @@
-pyvmomi>=7.0.3
-vSphere-Automation-SDK>=2.20.0
+# Requirements for vmware.vmware
+pyVmomi>=8.0.3.0.1
+vmware-vcenter
 requests
 urllib3
+
+# Requirements for vmware.vmware_rest
+aiohttp
+
