@@ -1,5 +1,8 @@
 ---
 collections:
   - name: vmware.vmware
+    version: "2.9.0"
+    source: redhat_hub
   - name: vmware.vmware_rest
+    source: redhat_hub
 ...
