@@ -1,0 +1,4 @@
+pyvmomi>=7.0.3
+vSphere-Automation-SDK>=2.20.0
+requests
+urllib3

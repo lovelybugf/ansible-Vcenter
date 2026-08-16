@@ -1,0 +1,5 @@
+---
+collections:
+  - name: vmware.vmware
+  - name: vmware.vmware_rest
+...

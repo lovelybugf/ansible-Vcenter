@@ -1,0 +1,26 @@
+---
+plugin: vmware.vmware.vmware_vm_inventory
+strict: false
+
+# Thong tin ket noi vCenter de lay danh sach may ao dong
+hostname: "vcenter.amigo.lab"
+username: "soft.02"
+password: "S0ftware2@!@#"
+validate_certs: false
+
+# Nap tag va cac thuoc tinh tuy chinh cua vCenter
+with_tags: true
+with_custom_values: true
+with_metadata: true
+
+# Loc va quan ly cac VM co nhan (tag) 'amigo-managed'
+filters:
+  - "'amigo-managed' in tags"
+
+# Tu dong tao cac nhom con de phan loai may ao trong inventory
+keyed_groups:
+  - key: summary.runtime.powerState
+    prefix: power_state
+  - key: guest.guestId
+    prefix: os_type
+...

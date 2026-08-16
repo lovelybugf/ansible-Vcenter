@@ -1,0 +1,30 @@
+---
+version: 3
+
+images:
+  base_image:
+    name: registry.redhat.io/ansible-automation-platform-24/ee-minimal-rhel9:2.0-1785413171
+
+options:
+  package_manager_path: /usr/bin/microdnf
+dependencies:
+  ansible_core:
+    package_pip: ansible-core==2.15.13
+  ansible_runner:
+    package_pip: ansible-runner
+  galaxy: requirements.yml
+  python: requirements.txt
+  system: bindep.txt
+
+additional_build_files:
+  - src: ansible.cfg
+    dest: conf.d/
+  - src: private_automation_hub-ca.pem
+    dest: certs/
+
+additional_build_steps:
+  prepend_galaxy:
+    - COPY _build/conf.d/ansible.cfg /home/runner/.ansible.cfg
+    - COPY _build/conf.d/ansible.cfg /root/.ansible.cfg
+    - COPY _build/certs/private_automation_hub-ca.pem /etc/pki/ca-trust/source/anchors
+    - RUN update-ca-trust

@@ -1,0 +1,34 @@
+---
+- name: Kich ban lay thong tin he thong ao hoa VMware vSphere
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vcenter_hostname: "vcenter.amigo.lab"
+    vcenter_username: "soft.02"
+    vcenter_password: "S0ftware2@!@#"
+    vcenter_validate_certs: false
+
+  tasks:
+    - name: "Goi API vCenter de lay thong tin (Co quan ly loi)"
+      block:
+        - name: "1. Goi lay danh sach may ao (VMs)"
+          vmware.vmware.vmware_vm_info:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: "{{ vcenter_validate_certs }}"
+          register: vm_info
+
+        - name: "2. Hien thi danh sach may ao quet duoc"
+          ansible.builtin.debug:
+            msg: "May ao: {{ item.guest_name }} (Trang thai nguon: {{ item.power_state }})"
+          loop: "{{ vm_info.virtual_machines }}"
+          when: vm_info.virtual_machines | length > 0
+
+      rescue:
+        - name: "3. Xu ly va canh bao khi mat ket noi API vCenter"
+          ansible.builtin.fail:
+            msg: >
+              Khong the ket noi den vCenter tai dia chi {{ vcenter_hostname }}.
+              Vui long kiem tra lai ket noi mang, DNS hoac thong tin xac thuc (Credentials).
+...
