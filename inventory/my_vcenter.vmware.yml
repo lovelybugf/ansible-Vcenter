@@ -14,7 +14,6 @@ properties:
   - summary
   - config.lockdownMode
   - guest.guestId
-  - tags
 
 # Nap tag va cac thuoc tinh tuy chinh cua vCenter
 with_tags: true
