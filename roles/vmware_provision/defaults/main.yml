@@ -6,8 +6,9 @@ vcenter_password: "S0ftware2@!@#"
 vcenter_validate_certs: false
 
 # Thong so ha tang ao hoa mac dinh
-vm_datacenter: "Datacenter-Amigo"
-vm_cluster: "Cluster-Production"
+vm_datacenter: "Amigo"
+vm_cluster: "Amigo 2"
+vm_resource_pool: "Software-2"
 vm_datastore: "san-datastore-01"
 vm_folder: "/vm/Production"
 vm_network: "VM-Network-VLAN50"

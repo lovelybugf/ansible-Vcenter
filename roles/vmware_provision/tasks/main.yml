@@ -13,7 +13,7 @@
       cluster: "{{ lookup('vmware.vmware_rest.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
       datastore: "{{ lookup('vmware.vmware_rest.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
       folder: "{{ lookup('vmware.vmware_rest.folder_moid', '/' + vm_datacenter + vm_folder) }}"
-      resource_pool: "{{ lookup('vmware.vmware_rest.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources') }}"
+      resource_pool: "{{ lookup('vmware.vmware_rest.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources/' + vm_resource_pool) }}"
     hardware_version: "VMX_19"
     memory:
       size_MiB: "{{ vm_ram_mb | int }}"
