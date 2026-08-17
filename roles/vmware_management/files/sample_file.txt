@@ -1,1 +1,0 @@
-Day la file chua thong tin cau hinh tinh duoc sao chep bang ansible.builtin.copy

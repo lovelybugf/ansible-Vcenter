@@ -1,6 +1,0 @@
----
-# handlers file for vmware_management
-- name: Restart local network service
-  ansible.builtin.debug:
-    msg: "Hanlder check: Khoi dong lai he thong mang..."
-...

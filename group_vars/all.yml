@@ -1,0 +1,7 @@
+---
+# File group_vars/all.yml dung de tap trung cac bien dung chung va nhay cam
+# Ban co the ma hoa file nay bang Ansible Vault: ansible-vault encrypt group_vars/all.yml
+vcenter_hostname: "10.0.55.12"
+vcenter_username: "soft.02"
+vcenter_password: "S0ftware2@!@#"
+vcenter_validate_certs: false

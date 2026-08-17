@@ -1,6 +1,0 @@
----
-# defaults file for vmware_management (low priority default values)
-vcenter_hostname: "vcenter.local.amigo.com"
-vcenter_username: "administrator@vsphere.local"
-vcenter_validate_certs: false
-...

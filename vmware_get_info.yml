@@ -2,11 +2,6 @@
 - name: Kich ban lay thong tin he thong ao hoa VMware vSphere
   hosts: localhost
   gather_facts: false
-  vars:
-    vcenter_hostname: "10.0.55.12"
-    vcenter_username: "soft.02"
-    vcenter_password: "S0ftware2@!@#"
-    vcenter_validate_certs: false
 
   tasks:
     - name: "Goi API vCenter de lay thong tin (Co quan ly loi)"

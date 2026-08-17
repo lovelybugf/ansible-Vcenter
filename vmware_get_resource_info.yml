@@ -3,10 +3,6 @@
   hosts: localhost
   gather_facts: false
   vars:
-    vcenter_hostname: "10.0.55.12"
-    vcenter_username: "soft.02"
-    vcenter_password: "S0ftware2@!@#"
-    vcenter_validate_certs: false
     target_vm_name: "dotv-instana_423218a1-6f21-d9f8-c316-0fcfa2ab9069"
 
   tasks:

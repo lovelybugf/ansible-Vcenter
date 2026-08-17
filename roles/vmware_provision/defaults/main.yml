@@ -1,9 +1,5 @@
 ---
 # defaults file for vmware_provision
-vcenter_hostname: "10.0.55.12"
-vcenter_username: "soft.02"
-vcenter_password: "S0ftware2@!@#"
-vcenter_validate_certs: false
 
 # Thong so ha tang ao hoa mac dinh
 vm_datacenter: "Amigo"
