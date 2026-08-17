@@ -1,7 +1,7 @@
 ---
 # tasks file for vmware_provision
-- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang REST API"
-  vmware.vmware_rest.vcenter_vm:
+- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang module Certified"
+  vmware.vmware.vm:
     vcenter_hostname: "{{ vcenter_hostname }}"
     vcenter_username: "{{ vcenter_username }}"
     vcenter_password: "{{ vcenter_password }}"
@@ -9,11 +9,11 @@
     name: "{{ vm_name }}"
     guest_OS: "RHEL_9_64"
     placement:
-      datacenter: "{{ lookup('vmware.vmware_rest.datacenter_moid', '/' + vm_datacenter) }}"
-      cluster: "{{ lookup('vmware.vmware_rest.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
-      datastore: "{{ lookup('vmware.vmware_rest.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
-      folder: "{{ lookup('vmware.vmware_rest.folder_moid', '/' + vm_datacenter + vm_folder) }}"
-      resource_pool: "{{ lookup('vmware.vmware_rest.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources/' + vm_resource_pool) }}"
+      datacenter: "{{ lookup('vmware.vmware.datacenter_moid', '/' + vm_datacenter) }}"
+      cluster: "{{ lookup('vmware.vmware.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
+      datastore: "{{ lookup('vmware.vmware.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
+      folder: "{{ lookup('vmware.vmware.folder_moid', '/' + vm_datacenter + vm_folder) }}"
+      resource_pool: "{{ lookup('vmware.vmware.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources/' + vm_resource_pool) }}"
     hardware_version: "VMX_19"
     memory:
       size_MiB: "{{ vm_ram_mb | int }}"
@@ -28,12 +28,12 @@
     nics:
       - backing:
           type: "STANDARD_PORTGROUP"
-          network: "{{ lookup('vmware.vmware_rest.network_moid', '/' + vm_datacenter + '/network/' + vm_network) }}"
+          network: "{{ lookup('vmware.vmware.network_moid', '/' + vm_datacenter + '/network/' + vm_network) }}"
   register: create_vm_result
 
 - name: "Task 2: Hien thi ket qua khoi tao"
   ansible.builtin.debug:
     msg:
-      - "Khoi tao may ao qua REST API: {{ vm_name }} thanh cong!"
+      - "Khoi tao may ao qua Certified VM module: {{ vm_name }} thanh cong!"
       - "ID may ao duoc cap: {{ create_vm_result.id | default('Unknown') }}"
 ...
