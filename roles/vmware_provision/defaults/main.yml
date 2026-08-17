@@ -9,7 +9,7 @@ vm_datastore: "vsanDatastore"
 vm_folder: "/vm/Software-2"
 vm_network: "192.168.50.0"
 vm_dvswitch_name: ""  # Điền tên DVS Switch của bạn nếu gặp lỗi quét cạc mạng DVS (ví dụ: "DSwitch")
-vm_module_type: "certified"
+vm_module_type: "certified"  # Lựa chọn module thực thi: certified, community, hoặc rest
 
 # Thong so phan cung may ao mac dinh
 vm_name: "amigo-web-temp"

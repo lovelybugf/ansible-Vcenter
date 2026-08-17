@@ -1,0 +1,39 @@
+---
+- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang module VMWARE_REST (Idempotent)"
+  vmware.vmware_rest.vcenter_vm:
+    placement:
+      cluster: "{{ lookup('vmware.vmware_rest.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
+      datastore: "{{ lookup('vmware.vmware_rest.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
+      folder: "{{ lookup('vmware.vmware_rest.folder_moid', '/' + vm_datacenter + vm_folder) }}"
+      resource_pool: "{{ lookup('vmware.vmware_rest.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources/' + vm_resource_pool) }}"
+    name: "{{ vm_name }}"
+    guest_OS: RHEL_9_64
+    hardware_version: VMX_19
+    cpu:
+      count: "{{ vm_cpu | int }}"
+      cores_per_socket: 1
+    memory:
+      size_MiB: "{{ vm_ram_mb | int }}"
+    disks:
+      - type: SCSI
+        scsi:
+          bus: 0
+          unit: 0
+        new_vmdk:
+          name: "system_disk"
+          capacity: "{{ (vm_disk_gb | int) * 1024 * 1024 * 1024 }}"
+    nics:
+      - type: VMXNET3
+        start_connected: true
+        allow_guest_control: false
+        backing:
+          type: 'DISTRIBUTED_PORTGROUP'
+          network: "{{ lookup('vmware.vmware_rest.network_moid', '/' + vm_datacenter + '/network/' + vm_network) }}"
+  register: create_vm_result
+
+- name: "Task 2: Hien thi ket qua khoi tao"
+  ansible.builtin.debug:
+    msg:
+      - "Khoi tao may ao qua VMWARE_REST module: {{ vm_name }} thanh cong!"
+      - "ID may ao duoc cap: {{ create_vm_result.id | default('Unknown') }}"
+...
