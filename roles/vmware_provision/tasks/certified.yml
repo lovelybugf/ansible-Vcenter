@@ -19,11 +19,11 @@
     scsi_controllers:
       - controller_type: "paravirtual"
         bus_number: 0
-    network_adapters:
-      - network: "{{ vm_network }}"
-        adapter_type: "vmxnet3"
-        connected: true
-        connect_at_power_on: true
+    # network_adapters:
+    #   - network: "{{ vm_network }}"
+    #     adapter_type: "vmxnet3"
+    #     connected: true
+    #     connect_at_power_on: true
   register: create_vm_result
 
 - name: "Task 2: Hien thi ket qua khoi tao"
