@@ -1,36 +1,39 @@
 ---
 # tasks file for vmware_provision
-- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter (Idempotent)"
-  community.vmware.vmware_guest:
-    hostname: "{{ vcenter_hostname }}"
-    username: "{{ vcenter_username }}"
-    password: "{{ vcenter_password }}"
-    validate_certs: "{{ vcenter_validate_certs }}"
-    datacenter: "{{ vm_datacenter }}"
-    cluster: "{{ vm_cluster }}"
-    datastore: "{{ vm_datastore }}"
-    folder: "{{ vm_folder }}"
+- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang REST API"
+  vmware.vmware_rest.vcenter_vm:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    vcenter_username: "{{ vcenter_username }}"
+    vcenter_password: "{{ vcenter_password }}"
+    vcenter_validate_certs: "{{ vcenter_validate_certs }}"
     name: "{{ vm_name }}"
-    state: "{{ vm_state }}"
-    guest_id: "rhel9_64Guest"
-    hardware:
-      memory_mb: "{{ vm_ram_mb }}"
-      num_cpus: "{{ vm_cpu }}"
-      scsi: "paravirtual"
-    disk:
-      - size_gb: "{{ vm_disk_gb }}"
-        type: "thin"
-        datastore: "{{ vm_datastore }}"
-    networks:
-      - name: "{{ vm_network }}"
-        start_connected: true
-    state_change_timeout: 300
+    guest_OS: "RHEL_9_64"
+    placement:
+      datacenter: "{{ lookup('vmware.vmware_rest.datacenter_moid', '/' + vm_datacenter) }}"
+      cluster: "{{ lookup('vmware.vmware_rest.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
+      datastore: "{{ lookup('vmware.vmware_rest.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
+      folder: "{{ lookup('vmware.vmware_rest.folder_moid', '/' + vm_datacenter + vm_folder) }}"
+      resource_pool: "{{ lookup('vmware.vmware_rest.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources') }}"
+    hardware_version: "VMX_19"
+    memory:
+      size_MiB: "{{ vm_ram_mb | int }}"
+    cpu:
+      count: "{{ vm_cpu | int }}"
+    disks:
+      - type: "SCSI"
+        backing:
+          type: "VMDK_FILE"
+        new_vmdk:
+          capacity: "{{ (vm_disk_gb | int) * 1024 * 1024 * 1024 }}"
+    nics:
+      - backing:
+          type: "STANDARD_PORTGROUP"
+          network: "{{ lookup('vmware.vmware_rest.network_moid', '/' + vm_datacenter + '/network/' + vm_network) }}"
   register: create_vm_result
 
-- name: "Task 2: Hien thi ket qua khoi tao va IP cua may ao moi"
+- name: "Task 2: Hien thi ket qua khoi tao"
   ansible.builtin.debug:
     msg:
-      - "Khoi tao may ao: {{ vm_name }} thanh cong!"
-      - "Trang thai hien tai: {{ create_vm_result.instance.hw_power_status | default('Unknown') }}"
-      - "He dieu hanh: {{ create_vm_result.instance.hw_guest_full_name | default('Unknown') }}"
+      - "Khoi tao may ao qua REST API: {{ vm_name }} thanh cong!"
+      - "ID may ao duoc cap: {{ create_vm_result.id | default('Unknown') }}"
 ...
