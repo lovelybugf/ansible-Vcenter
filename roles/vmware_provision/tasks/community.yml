@@ -19,7 +19,10 @@
         datastore: "{{ vm_datastore }}"
     networks:
       - name: "{{ vm_network }}"
+        dvswitch_name: "{{ vm_dvswitch_name | default(omit, true) }}"
+        device_type: "vmxnet3"
         start_connected: true
+        connected: true
   register: create_vm_result
 
 - name: "Task 2: Hien thi ket qua khoi tao va trang thai"
