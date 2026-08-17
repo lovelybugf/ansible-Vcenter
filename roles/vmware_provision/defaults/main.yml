@@ -7,7 +7,7 @@ vm_cluster: "Amigo 2"
 vm_resource_pool: "Software-2"
 vm_datastore: "vsanDatastore"
 vm_folder: "/vm/Software-2"
-vm_network: "192.168.50.0"
+vm_network: "dvportgroup-1201111"
 vm_module_type: "certified"
 
 # Thong so phan cung may ao mac dinh
