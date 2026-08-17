@@ -6,7 +6,7 @@
     datacenter: "{{ vm_datacenter }}"
     cluster: "{{ vm_cluster }}"
     datastore: "{{ vm_datastore }}"
-    folder: "{{ vm_folder }}"
+    #folder: "{{ vm_folder }}"
     resource_pool: "{{ vm_resource_pool }}"
     guest_id: "rhel9_64Guest"
     hardware_version: 19
