@@ -1,6 +1,6 @@
 ---
 # tasks file for vmware_provision
-- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang module Certified"
+- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter"
   vmware.vmware.vm:
     vcenter_hostname: "{{ vcenter_hostname }}"
     vcenter_username: "{{ vcenter_username }}"
