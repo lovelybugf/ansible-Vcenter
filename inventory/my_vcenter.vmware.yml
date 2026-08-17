@@ -2,7 +2,6 @@
 plugin: community.vmware.vmware_vm_inventory
 strict: false
 
-
 # Nap tag va cac thuoc tinh tuy chinh cua vCenter
 with_tags: true
 with_custom_values: true

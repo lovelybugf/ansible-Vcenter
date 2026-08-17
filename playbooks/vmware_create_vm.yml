@@ -2,14 +2,15 @@
 - name: Kich ban tu dong hoa tao moi may ao tren vSphere vCenter
   hosts: localhost
   gather_facts: false
+  vars_files:
+    - "../group_vars/all.yml"
   vars:
-    # Bạn có thể ghi đè các biến mặc định của Role tại đây nếu cần
     vm_name: "amigo-web-prod-01"
     vm_cpu: 4
     vm_ram_mb: 8192
 
   tasks:
-    - name: "Thuc thi tao may ao qua Role (Co quan ly loi va roll-back)"
+    - name: "Thuc thi tao may ao qua Role"
       block:
         - name: "1. Khoi chay Role vmware_provision de tao VM"
           ansible.builtin.include_role:
