@@ -2,11 +2,6 @@
 plugin: community.vmware.vmware_vm_inventory
 strict: false
 
-# Thong tin ket noi vCenter de lay danh sach may ao dong
-hostname: "10.0.55.12"
-username: "soft.02"
-password: "S0ftware2@!@#"
-validate_certs: false
 
 # Nap tag va cac thuoc tinh tuy chinh cua vCenter
 with_tags: true
