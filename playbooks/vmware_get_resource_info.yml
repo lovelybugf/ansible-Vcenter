@@ -2,6 +2,8 @@
 - name: Kich ban lay thong tin tai nguyen cua may ao su dung Certified module
   hosts: localhost
   gather_facts: false
+  vars_files:
+    - "../group_vars/all.yml"
   vars:
     target_vm_name: "dotv-instana_423218a1-6f21-d9f8-c316-0fcfa2ab9069"
 
