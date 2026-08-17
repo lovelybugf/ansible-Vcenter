@@ -17,9 +17,9 @@
       - size_gb: "{{ vm_disk_gb | int }}"
         type: "thin"
         datastore: "{{ vm_datastore }}"
-    # networks:
-    #   - name: "{{ vm_network }}"
-    #     start_connected: true
+    networks:
+      - name: "{{ vm_network }}"
+        start_connected: true
   register: create_vm_result
 
 - name: "Task 2: Hien thi ket qua khoi tao va trang thai"
