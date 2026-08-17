@@ -2,10 +2,6 @@
 # tasks file for vmware_provision
 - name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter"
   vmware.vmware.vm:
-    vcenter_hostname: "{{ vcenter_hostname }}"
-    vcenter_username: "{{ vcenter_username }}"
-    vcenter_password: "{{ vcenter_password }}"
-    vcenter_validate_certs: "{{ vcenter_validate_certs }}"
     name: "{{ vm_name }}"
     guest_OS: "RHEL_9_64"
     placement:

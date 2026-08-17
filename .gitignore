@@ -12,3 +12,4 @@ collections/ansible_collections/
 .ansible-navigator/
 .idea/
 .vscode/
+env.sh
