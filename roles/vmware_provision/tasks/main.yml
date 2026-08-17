@@ -1,5 +1,36 @@
 ---
 # tasks file for vmware_provision
-- name: "Thuc thi kich ban khoi tao theo loai module lua chon"
-  ansible.builtin.include_tasks: "{{ vm_module_type | default('certified') }}.yml"
+- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang module Certified"
+  vmware.vmware.vm:
+    name: "{{ vm_name }}"
+    datacenter: "{{ vm_datacenter }}"
+    cluster: "{{ vm_cluster }}"
+    datastore: "{{ vm_datastore }}"
+    #folder: "{{ vm_folder }}"
+    resource_pool: "{{ vm_resource_pool }}"
+    guest_id: "rhel9_64Guest"
+    hardware_version: 19
+    cpu:
+      cores: "{{ vm_cpu | int }}"
+    memory:
+      size_mb: "{{ vm_ram_mb | int }}"
+    disks:
+      - size: "{{ vm_disk_gb | int }}gb"
+        provisioning: "thin"
+        device_node: "SCSI(0:0)"
+    scsi_controllers:
+      - controller_type: "paravirtual"
+        bus_number: 0
+    network_adapters:
+      - network: "{{ vm_network }}"
+        adapter_type: "vmxnet3"
+        connected: true
+        connect_at_power_on: true
+  register: create_vm_result
+
+- name: "Task 2: Hien thi ket qua khoi tao"
+  ansible.builtin.debug:
+    msg:
+      - "Khoi tao may ao qua Certified VM module: {{ vm_name }} thanh cong!"
+      - "ID may ao duoc cap (MOID): {{ create_vm_result.vm.moid | default('Unknown') }}"
 ...

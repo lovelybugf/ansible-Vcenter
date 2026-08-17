@@ -2,8 +2,6 @@
 - name: Kich ban tu dong hoa tao moi may ao tren vSphere vCenter
   hosts: localhost
   gather_facts: false
-  vars_files:
-    - "../group_vars/all.yml"
   vars:
     vm_name: "amigo-web-prod-01"
     vm_cpu: 4
