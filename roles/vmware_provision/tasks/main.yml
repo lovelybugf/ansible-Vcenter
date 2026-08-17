@@ -1,35 +1,36 @@
 ---
 # tasks file for vmware_provision
-- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter"
+- name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang module Certified"
   vmware.vmware.vm:
     name: "{{ vm_name }}"
-    guest_OS: "RHEL_9_64"
-    placement:
-      datacenter: "{{ lookup('vmware.vmware.datacenter_moid', '/' + vm_datacenter) }}"
-      cluster: "{{ lookup('vmware.vmware.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
-      datastore: "{{ lookup('vmware.vmware.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
-      folder: "{{ lookup('vmware.vmware.folder_moid', '/' + vm_datacenter + vm_folder) }}"
-      resource_pool: "{{ lookup('vmware.vmware.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources/' + vm_resource_pool) }}"
-    hardware_version: "VMX_19"
-    memory:
-      size_MiB: "{{ vm_ram_mb | int }}"
+    datacenter: "{{ lookup('vmware.vmware.datacenter_moid', '/' + vm_datacenter) }}"
+    cluster: "{{ lookup('vmware.vmware.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
+    datastore: "{{ lookup('vmware.vmware.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
+    folder: "{{ lookup('vmware.vmware.folder_moid', '/' + vm_datacenter + vm_folder) }}"
+    resource_pool: "{{ lookup('vmware.vmware.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources/' + vm_resource_pool) }}"
+    guest_id: "rhel9_64Guest"
+    hardware_version: 19
     cpu:
-      count: "{{ vm_cpu | int }}"
+      cores: "{{ vm_cpu | int }}"
+    memory:
+      size_mb: "{{ vm_ram_mb | int }}"
     disks:
-      - type: "SCSI"
-        backing:
-          type: "VMDK_FILE"
-        new_vmdk:
-          capacity: "{{ (vm_disk_gb | int) * 1024 * 1024 * 1024 }}"
-    nics:
-      - backing:
-          type: "STANDARD_PORTGROUP"
-          network: "{{ lookup('vmware.vmware.network_moid', '/' + vm_datacenter + '/network/' + vm_network) }}"
+      - size: "{{ vm_disk_gb | int }}gb"
+        provisioning: "thin"
+        device_node: "SCSI(0:0)"
+    scsi_controllers:
+      - controller_type: "paravirtual"
+        bus_number: 0
+    network_adapters:
+      - network: "{{ lookup('vmware.vmware.network_moid', '/' + vm_datacenter + '/network/' + vm_network) }}"
+        adapter_type: "vmxnet3"
+        connected: true
+        connect_at_power_on: true
   register: create_vm_result
 
 - name: "Task 2: Hien thi ket qua khoi tao"
   ansible.builtin.debug:
     msg:
       - "Khoi tao may ao qua Certified VM module: {{ vm_name }} thanh cong!"
-      - "ID may ao duoc cap: {{ create_vm_result.id | default('Unknown') }}"
+      - "ID may ao duoc cap (MOID): {{ create_vm_result.vm.moid | default('Unknown') }}"
 ...
