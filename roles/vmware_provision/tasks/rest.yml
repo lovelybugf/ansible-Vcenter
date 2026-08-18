@@ -2,10 +2,10 @@
 - name: "Task 1: Thuc hien khoi tao may ao moi tren vCenter bang module VMWARE_REST (Idempotent)"
   vmware.vmware_rest.vcenter_vm:
     placement:
-      cluster: "{{ vm_cluster }}"
-      datastore: "{{ vm_datastore }}"
-      folder: "{{ vm_folder }}"
-      resource_pool: "{{ vm_resource_pool }}"
+      cluster: "{{ lookup('vmware.vmware_rest.cluster_moid', '/' + vm_datacenter + '/host/' + vm_cluster) }}"
+      datastore: "{{ lookup('vmware.vmware_rest.datastore_moid', '/' + vm_datacenter + '/datastore/' + vm_datastore) }}"
+      folder: "{{ lookup('vmware.vmware_rest.folder_moid', '/' + vm_datacenter + vm_folder) }}"
+      resource_pool: "{{ lookup('vmware.vmware_rest.resource_pool_moid', '/' + vm_datacenter + '/host/' + vm_cluster + '/Resources/' + vm_resource_pool) }}"
     name: "{{ vm_name }}"
     guest_OS: RHEL_9_64
     hardware_version: VMX_19
@@ -28,7 +28,7 @@
         allow_guest_control: false
         backing:
           type: 'DISTRIBUTED_PORTGROUP'
-          network: "{{ vm_network }}"
+          network: "{{ lookup('vmware.vmware_rest.network_moid', '/' + vm_datacenter + '/network/' + vm_network) }}"
   register: create_vm_result
 
 - name: "Task 2: Hien thi ket qua khoi tao"
