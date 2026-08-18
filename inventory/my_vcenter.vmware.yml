@@ -17,4 +17,8 @@ keyed_groups:
     prefix: power_state
   - key: guest.guestId
     prefix: os_type
+
+# Bo loc: Chi nhan cac may ao co chu 'nampd' trong ten (khong phan biet hoa thuong)
+filters:
+  - "'nampd' in config.name.lower()"
 ...
