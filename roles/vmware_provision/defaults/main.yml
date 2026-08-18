@@ -10,6 +10,13 @@ vm_folder: "/vm/Software-2"
 vm_network: "192.168.50.0"
 vm_dvswitch_name: "" # Điền tên DVS Switch của bạn nếu gặp lỗi quét cạc mạng DVS (ví dụ: "DSwitch")
 vm_module_type: "certified"
+
+# Thong so ma ID (MOID) cho module REST (Co thu muc rieng, mac dinh tu dong map sang ten neu de trong)
+vm_cluster_id: ""
+vm_datastore_id: ""
+vm_folder_id: ""
+vm_resource_pool_id: ""
+vm_network_id: ""
 # Thong so phan cung may ao mac dinh
 vm_name: "amigo-web-temp"
 vm_cpu: 2
