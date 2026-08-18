@@ -19,6 +19,4 @@
           ansible.builtin.debug:
             msg: >
               TIEN TRINH TAO MAY AO BI LOI!
-              He thong se huy bo tien trinh va khong de lai VM rác.
-              Vui long check lai dung luong Datastore, Datacenter, Cluster hoac Network.
 ...

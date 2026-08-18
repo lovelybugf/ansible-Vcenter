@@ -8,4 +8,6 @@ collections:
   - name: community.vmware
     source: galaxy
     version: "4.8.5"
+  - name: cloud.common
+    source: galaxy
 ...
