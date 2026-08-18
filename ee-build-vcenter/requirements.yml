@@ -7,4 +7,5 @@ collections:
     source: redhat_hub
   - name: community.vmware
     source: galaxy
+    version: "4.8.5"
 ...
