@@ -23,4 +23,7 @@ vm_cpu: 2
 vm_ram_mb: 4096
 vm_disk_gb: 50
 vm_state: "poweredon"
+
+# Duong dan file ISO he dieu hanh tren vCenter Datastore
+vm_iso_path: "[vsanDatastore] b4b80e6a-0a46-ae2f-9e7e-6c92cf75ed90/rhel-9.3-x86_64-dvd.iso"
 ...

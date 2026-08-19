@@ -17,6 +17,12 @@
       - size_gb: "{{ vm_disk_gb | int }}"
         type: "thin"
         datastore: "{{ vm_datastore }}"
+    cdrom:
+      - controller_type: "ide"
+        controller_number: 0
+        unit_number: 0
+        type: "iso"
+        iso_path: "{{ vm_iso_path }}"
     # networks:
     #   - name: "{{ vm_network }}"
     #     dvswitch_name: "{{ vm_dvswitch_name | default(omit, true) }}"
