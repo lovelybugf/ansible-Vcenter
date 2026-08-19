@@ -8,15 +8,7 @@
     vm_ram_mb: 8192
 
   tasks:
-    - name: "Thuc thi tao may ao qua Role"
-      block:
-        - name: "1. Khoi chay Role vmware_provision de tao VM"
-          ansible.builtin.include_role:
-            name: vmware_provision
-
-      rescue:
-        - name: "2. Thuc hien thong bao hoac Rollback khi gap loi"
-          ansible.builtin.debug:
-            msg: >
-              TIEN TRINH TAO MAY AO BI LOI!
+    - name: "1. Khoi chay Role vmware_provision de tao VM"
+      ansible.builtin.include_role:
+        name: vmware_provision
 ...
