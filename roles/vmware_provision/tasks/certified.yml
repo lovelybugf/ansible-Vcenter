@@ -50,6 +50,6 @@
 - name: "Task 3: Khoi dong nguon (Power On) cho may ao"
   vmware.vmware.vm_powerstate:
     moid: "{{ create_vm_result.vm.moid }}"
-    state: "on"
+    state: "powered-on"
     datacenter: "{{ vm_datacenter }}"
 ...
