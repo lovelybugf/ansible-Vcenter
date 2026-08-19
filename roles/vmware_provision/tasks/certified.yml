@@ -19,8 +19,11 @@
     scsi_controllers:
       - controller_type: "paravirtual"
         bus_number: 0
+    sata_controllers:
+      - bus_number: 0
     cdroms:
       - iso_media_path: "{{ vm_iso_path }}"
+        device_node: "SATA(0:0)"
         connect_at_power_on: true
     # network_adapters:
     #   - network: "{{ vm_network }}"
