@@ -28,5 +28,5 @@ vm_state: "poweredon"
 vm_iso_path: "[vsanDatastore] b4b80e6a-0a46-ae2f-9e7e-6c92cf75ed90/rhel-9.3-x86_64-dvd.iso"
 
 # Duong dan file ISO Kickstart (OEMDRV) tren vCenter Datastore (de trong neu khong dung kickstart)
-vm_kickstart_iso_path: ""
+vm_kickstart_iso_path: "[vsanDatastore] b4b80e6a-0a46-ae2f-9e7e-6c92cf75ed90/kickstart.iso"
 ...
