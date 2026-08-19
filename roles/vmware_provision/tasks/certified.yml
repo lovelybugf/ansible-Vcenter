@@ -21,10 +21,19 @@
         bus_number: 0
     sata_controllers:
       - bus_number: 0
-    cdroms:
-      - iso_media_path: "{{ vm_iso_path }}"
-        device_node: "SATA(0:0)"
-        connect_at_power_on: true
+    cdroms: >-
+      {{
+        [{
+          'iso_media_path': vm_iso_path,
+          'device_node': 'SATA(0:0)',
+          'connect_at_power_on': true
+        }] +
+        ([] if not vm_kickstart_iso_path else [{
+          'iso_media_path': vm_kickstart_iso_path,
+          'device_node': 'SATA(0:1)',
+          'connect_at_power_on': true
+        }])
+      }}
     # network_adapters:
     #   - network: "{{ vm_network }}"
     #     adapter_type: "vmxnet3"
