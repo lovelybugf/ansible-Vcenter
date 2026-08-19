@@ -2,6 +2,7 @@
 - name: Kich ban lay thong tin he thong ao hoa VMware vSphere
   hosts: localhost
   gather_facts: false
+  become: false
 
   tasks:
     - name: "Goi API vCenter de lay thong tin (Co quan ly loi)"
@@ -22,6 +23,6 @@
         - name: "3. Xu ly va canh bao khi mat ket noi API vCenter"
           ansible.builtin.fail:
             msg: >
-              Khong the ket noi den vCenter tai dia chi {{ vcenter_hostname }}.
+              Khong the ket noi den vCenter tai dia chi {{ lookup('env', 'VMWARE_HOST') | default('Chua xac dinh') }}.
               Vui long kiem tra lai ket noi mang, DNS hoac thong tin xac thuc (Credentials).
 ...
