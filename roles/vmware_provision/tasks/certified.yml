@@ -46,4 +46,13 @@
     msg:
       - "Khoi tao may ao qua Certified VM module: {{ vm_name }} thanh cong!"
       - "ID may ao duoc cap (MOID): {{ create_vm_result.vm.moid | default('Unknown') }}"
+
+- name: "Task 3: Khoi dong nguon (Power On) cho may ao"
+  vmware.vmware.vm_powerstate:
+    hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    username: "{{ lookup('env', 'VMWARE_USER') }}"
+    password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+    validate_certs: "{{ lookup('env', 'VMWARE_VALIDATE_CERTS') | default(false, true) | bool }}"
+    name: "{{ vm_name }}"
+    state: "powered-on"
 ...
