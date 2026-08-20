@@ -5,13 +5,16 @@
   become: false
 
   vars:
-    # Ten may ao can sua doi tai nguyen
-    vm_name: "amigo-clone-vm-01"
+    # Cac bien mac dinh (Se tu dong bi ghi de neu ban nhap tu giao dien Survey cua AWX)
+    vm_name: "nampd-sample"
+    vm_datacenter: "Amigo"
+    vm_cluster: "Amigo 2"
+    vm_resource_pool: "Software-2"
 
     # Cau hinh tai nguyen moi muon thiet lap
     vm_cpu_cores: 4 # So luong Core CPU muon cap nhat
     vm_cpu_cores_per_socket: 2 # So core tren moi socket (tuy chon, mac dinh de trong se tu dong)
-    vm_memory_mb: 8192 # Dung luong RAM moi tinh bang MB (vi du: 8192 MB = 8 GB)
+    vm_memory_mb: 8192 # Dung luong RAM moi tinh bang MB
 
     # Co cho phep tat/bat lai may ao khi can thiet ap dung thay doi phan cung khong:
     # - true: Tu dong tat nguon, cap nhat cau hinh va bat nguon tro lai (Gay gian doan he thong)
@@ -25,6 +28,9 @@
           vmware.vmware.vm:
             validate_certs: false
             name: "{{ vm_name }}"
+            datacenter: "{{ vm_datacenter | default(omit, true) }}"
+            cluster: "{{ vm_cluster | default(omit, true) }}"
+            resource_pool: "{{ vm_resource_pool | default(omit, true) }}"
             state: present
             cpu:
               cores: "{{ vm_cpu_cores | int }}"
@@ -34,13 +40,23 @@
             allow_power_cycling: "{{ vm_allow_power_cycling | bool }}"
           register: modify_result
 
-        - name: "2. Hien thi ket qua thay doi tai nguyen"
+        - name: "2. Truy van thong tin tai nguyen thuc te tu vCenter sau khi sua"
+          vmware.vmware.vm_resource_info:
+            validate_certs: false
+            name: "{{ vm_name }}"
+            datacenter: "{{ vm_datacenter | default(omit, true) }}"
+          register: vm_info
+          ignore_errors: true
+
+        - name: "3. Hien thi ket qua thay doi tai nguyen"
           ansible.builtin.debug:
             msg:
-              - "Sua doi tai nguyen may ao '{{ vm_name }}' hoan tat!"
+              - "Sua doi tai nguyen may ao '{{ item.name }}' hoan tat!"
               - "Ket qua thay doi (Changed): {{ modify_result.changed }}"
-              - "So CPU Cores hien tai: {{ modify_result.vm.cpu.num_cpu_cores | default('N/A') }}"
-              - "Dung luong RAM hien tai: {{ modify_result.vm.memory.size_mb | default('N/A') }} MB"
+              - "So CPU Cores thuc te hien tai: {{ item.cpu.num_cpu_cores | default('N/A') }}"
+              - "Dung luong RAM thuc te hien tai: {{ item.memory.size_mb | default('N/A') }} MB"
+          loop: "{{ vm_info.vms | default([]) }}"
+          when: vm_info.vms | default([]) | length > 0
 
       rescue:
         - name: "3. Xu ly va bao loi khi sua doi tai nguyen gap su co"

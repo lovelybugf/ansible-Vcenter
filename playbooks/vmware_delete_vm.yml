@@ -5,8 +5,11 @@
   become: false
 
   vars:
-    # Ten may ao can xoa
-    vm_name: "amigo-clone-vm-01"
+    # Cac bien mac dinh (Se tu dong bi ghi de neu ban nhap tu giao dien Survey cua AWX)
+    vm_name: "nampd-sample"
+    vm_datacenter: "Amigo"
+    vm_cluster: "Amigo 2"
+    vm_resource_pool: "Software-2"
 
     # Cau hinh kieu xoa may ao:
     # - false: Xoa sach ca VM va tat ca file lien quan tren datastore (Mac dinh, khuyen nghi)
@@ -20,6 +23,9 @@
           vmware.vmware.vm:
             validate_certs: false
             name: "{{ vm_name }}"
+            datacenter: "{{ vm_datacenter | default(omit, true) }}"
+            cluster: "{{ vm_cluster | default(omit, true) }}"
+            resource_pool: "{{ vm_resource_pool | default(omit, true) }}"
             state: "poweredoff"
           register: power_off_result
           ignore_errors: true # Bo qua loi neu may ao khong ton tai hoac da o trang thai tat nguon
@@ -28,6 +34,9 @@
           vmware.vmware.vm:
             validate_certs: false
             name: "{{ vm_name }}"
+            datacenter: "{{ vm_datacenter | default(omit, true) }}"
+            cluster: "{{ vm_cluster | default(omit, true) }}"
+            resource_pool: "{{ vm_resource_pool | default(omit, true) }}"
             state: absent
             delete_from_inventory: "{{ vm_delete_from_inventory }}"
           register: delete_result
