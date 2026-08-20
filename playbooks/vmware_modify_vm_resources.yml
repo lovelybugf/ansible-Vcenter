@@ -9,9 +9,9 @@
     vm_name: "amigo-clone-vm-01"
 
     # Cau hinh tai nguyen moi muon thiet lap
-    vm_cpu_cores: 4                # So luong Core CPU muon cap nhat
-    vm_cpu_cores_per_socket: 2     # So core tren moi socket (tuy chon, mac dinh de trong se tu dong)
-    vm_memory_mb: 8192             # Dung luong RAM moi tinh bang MB (vi du: 8192 MB = 8 GB)
+    vm_cpu_cores: 4 # So luong Core CPU muon cap nhat
+    vm_cpu_cores_per_socket: 2 # So core tren moi socket (tuy chon, mac dinh de trong se tu dong)
+    vm_memory_mb: 8192 # Dung luong RAM moi tinh bang MB (vi du: 8192 MB = 8 GB)
 
     # Co cho phep tat/bat lai may ao khi can thiet ap dung thay doi phan cung khong:
     # - true: Tu dong tat nguon, cap nhat cau hinh va bat nguon tro lai (Gay gian doan he thong)
@@ -23,9 +23,6 @@
       block:
         - name: "1. Thuc hien thay doi CPU va RAM bang module Certified (vmware.vmware.vm)"
           vmware.vmware.vm:
-            hostname: "{{ lookup('env', 'VMWARE_HOST') | default(omit) }}"
-            username: "{{ lookup('env', 'VMWARE_USER') | default(omit) }}"
-            password: "{{ lookup('env', 'VMWARE_PASSWORD') | default(omit) }}"
             validate_certs: false
             name: "{{ vm_name }}"
             state: present
