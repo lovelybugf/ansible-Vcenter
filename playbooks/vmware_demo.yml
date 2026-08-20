@@ -11,10 +11,6 @@
   tasks:
     - name: 1. Lay thong tin danh sach cac may ao (VMs) tren vCenter
       vmware.vmware.vmware_vm_info:
-        hostname: "{{ vcenter_hostname }}"
-        username: "{{ vcenter_username }}"
-        password: "{{ vcenter_password }}"
-        validate_certs: "{{ vcenter_validate_certs }}"
       register: vm_info
 
     - name: 2. Hien thi ten cac may ao tim thay

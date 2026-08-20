@@ -28,10 +28,6 @@
 
         - name: "3. Chuyen doi VM thanh Template (Su dung module Certified)"
           vmware.vmware.folder_template_from_vm:
-            hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
-            username: "{{ lookup('env', 'VMWARE_USER') }}"
-            password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
-            validate_certs: "{{ lookup('env', 'VMWARE_VALIDATE_CERTS') | default(false, true) | bool }}"
             datacenter: "{{ vm_datacenter }}"
             vm_name: "{{ vm_name }}"
             folder: "{{ vm_folder }}"

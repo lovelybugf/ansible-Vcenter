@@ -1,15 +1,14 @@
 ---
-- name: Kich ban lay thong tin tai nguyen cua may ao su dung Certified module
-  hosts: localhost
+- name: Kich ban lay thong tin tai nguyen cua may ao tu inventory
+  hosts: all
   gather_facts: false
-  vars:
-    target_vm_name: "dotv-instana_423218a1-6f21-d9f8-c316-0fcfa2ab9069"
 
   tasks:
     - name: "1. Goi lay thong tin tai nguyen cua may ao qua Certified module"
       vmware.vmware.vm_resource_info:
-        name: "{{ target_vm_name }}"
+        name: "{{ inventory_hostname }}"
       register: vm_resource_result
+      delegate_to: localhost
 
     - name: "2. Hien thi thong tin chi tiet tai nguyen thu thap duoc"
       ansible.builtin.debug:
@@ -22,4 +21,5 @@
           - "Thuoc Resource Pool: {{ item.resource_pool.name | default('N/A') }} (ID: {{ item.resource_pool.moid | default('N/A') }})"
       loop: "{{ vm_resource_result.vms }}"
       when: vm_resource_result.vms | length > 0
+      delegate_to: localhost
 ...
