@@ -21,7 +21,7 @@
       block:
         - name: "1. Goi deploy_folder_template de clone VM"
           vmware.vmware.deploy_folder_template:
-            validate_certs: "{{ lookup('env', 'VMWARE_VALIDATE_CERTS') | default(false, true) | bool }}"
+            validate_certs: false
             datacenter: "{{ vm_datacenter }}"
             cluster: "{{ vm_cluster }}"
             datastore: "{{ vm_datastore }}"

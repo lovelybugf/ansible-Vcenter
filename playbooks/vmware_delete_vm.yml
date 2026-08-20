@@ -1,0 +1,48 @@
+---
+- name: Kich ban tu dong hoa xoa may ao tren vCenter
+  hosts: localhost
+  gather_facts: false
+  become: false
+
+  vars:
+    # Ten may ao can xoa
+    vm_name: "amigo-clone-vm-01"
+
+    # Cau hinh kieu xoa may ao:
+    # - false: Xoa sach ca VM va tat ca file lien quan tren datastore (Mac dinh, khuyen nghi)
+    # - true: Chi unregister (go khoi inventory), giu lai tep tin tren datastore
+    vm_delete_from_inventory: false
+
+  tasks:
+    - name: "Quy trinh xoa may ao an toan"
+      block:
+        - name: "1. Kiem tra va tat nguon may ao (Yeu cau may ao phai duoc tat nguon truoc khi xoa)"
+          vmware.vmware.vm:
+            validate_certs: false
+            name: "{{ vm_name }}"
+            state: "poweredoff"
+          register: power_off_result
+          ignore_errors: true # Bo qua loi neu may ao khong ton tai hoac da o trang thai tat nguon
+
+        - name: "2. Thuc hien xoa may ao su dung module Certified (vmware.vmware.vm)"
+          vmware.vmware.vm:
+            validate_certs: false
+            name: "{{ vm_name }}"
+            state: absent
+            delete_from_inventory: "{{ vm_delete_from_inventory }}"
+          register: delete_result
+
+        - name: "3. Hien thi ket qua thuc thi xoa may ao"
+          ansible.builtin.debug:
+            msg:
+              - "Ten may ao yeu cau: {{ vm_name }}"
+              - "Trang thai thay doi (Changed): {{ delete_result.changed }}"
+              - "Thong bao tu he thong: {{ delete_result.msg | default('VM da duoc xoa hoac khong co san tren he thong.') }}"
+
+      rescue:
+        - name: "4. Xu ly va bao loi khi tien trinh gap su co"
+          ansible.builtin.fail:
+            msg: >
+              TIEN TRINH XOA MAY AO '{{ vm_name }}' THAT BAI!
+              Vui long kiem tra lai ket noi vCenter, thong tin tai khoan hoac ten may ao.
+...
