@@ -7,6 +7,10 @@ ansible-navigator:
     pull:
       policy: missing
     environment-variables:
+      pass:
+        - VMWARE_HOST
+        - VMWARE_USER
+        - VMWARE_PASSWORD
       set:
         ANSIBLE_COLLECTIONS_PATH: "/usr/share/ansible/collections"
   mode: stdout
