@@ -52,7 +52,7 @@
             msg:
               - "Sua doi tai nguyen may ao '{{ item.name }}' hoan tat!"
               - "Ket qua thay doi (Changed): {{ modify_result.changed }}"
-              - "So CPU Cores thuc te hien tai: {{ item.cpu.num_cpu_cores | default('N/A') }}"
+              - "So CPU Cores thuc te hien tai: {{ item.cpu.processor_count | default('N/A') }}"
               - "Dung luong RAM thuc te hien tai: {{ item.memory.size_mb | default('N/A') }} MB"
           loop: "{{ vm_info.vms | default([]) }}"
           when: vm_info.vms | default([]) | length > 0
