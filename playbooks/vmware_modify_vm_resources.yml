@@ -44,7 +44,6 @@
           vmware.vmware.vm_resource_info:
             validate_certs: false
             name: "{{ vm_name }}"
-            datacenter: "{{ vm_datacenter | default(omit, true) }}"
           register: vm_info
           ignore_errors: true
 
