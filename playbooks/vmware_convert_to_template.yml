@@ -17,7 +17,6 @@
             hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
             username: "{{ lookup('env', 'VMWARE_USER') }}"
             password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
-            validate_certs: "{{ lookup('env', 'VMWARE_VALIDATE_CERTS') | default(false, true) | bool }}"
             name: "{{ vm_name }}"
             state: "poweredoff"
           register: power_off_result
