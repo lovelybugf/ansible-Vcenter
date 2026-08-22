@@ -1,17 +1,16 @@
 ---
-- name: "Demo import_role"
+- name: "Chung minh import_role khong cho phep dat ten role bang bien dong"
   hosts: localhost
   gather_facts: false
+  vars:
+    my_dynamic_role: "demo_role"
   tasks:
-    - name: "Normal Task 1"
+    - name: "Task truoc khi import"
       ansible.builtin.debug:
-        msg: "This runs FIRST."
-    - name: "Import demo_role"
+        msg: "Task nay se khong bao gio duoc chay vi loi cu phap xay ra ngay tu dau!"
+
+    - name: "Import role dung bien dong (Se bao loi Compile-time)"
       ansible.builtin.import_role:
-        name: demo_role
-      vars:
-        demo_var: "Imported Variable"
-    - name: "Normal Task 2"
-      ansible.builtin.debug:
-        msg: "This runs LAST."
+        name: "{{ my_dynamic_role }}"
 ...
+
