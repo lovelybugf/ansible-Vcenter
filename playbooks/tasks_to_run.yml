@@ -1,5 +1,0 @@
----
-- name: "In ra thong tin phan tu"
-  ansible.builtin.debug:
-    msg: "Dang xu ly trai cay: {{ item }}"
-...
