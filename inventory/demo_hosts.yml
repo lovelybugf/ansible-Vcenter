@@ -3,10 +3,12 @@ all:
   hosts:
     vm-db-01:
       ansible_host: 192.168.50.42
-      ansible_user: root
+      ansible_user: student
+      ansible_password: "1"
     vm-web-01:
       ansible_host: 192.168.50.43
-      ansible_user: root
+      ansible_user: student
+      ansible_password: "1"
   children:
     db_servers:
       hosts:
