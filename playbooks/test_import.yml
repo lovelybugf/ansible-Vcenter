@@ -1,0 +1,11 @@
+---
+- name: "Thu nghiem Static Import voi vong lap"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "Goi import_tasks trong loop"
+      ansible.builtin.import_tasks: tasks_to_run.yml
+      loop:
+        - "Tao"
+        - "Chuoi"
+...

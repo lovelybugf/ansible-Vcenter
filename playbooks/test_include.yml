@@ -1,0 +1,11 @@
+---
+- name: "Thu nghiem Dynamic Include voi vong lap"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "Goi include_tasks trong loop"
+      ansible.builtin.include_tasks: tasks_to_run.yml
+      loop:
+        - "Tao"
+        - "Chuoi"
+...
