@@ -1,0 +1,17 @@
+---
+all:
+  hosts:
+    vm-db-01:
+      ansible_host: 127.0.0.1
+      ansible_connection: local
+    vm-web-01:
+      ansible_host: 127.0.0.1
+      ansible_connection: local
+  children:
+    db_servers:
+      hosts:
+        vm-db-01:
+    web_servers:
+      hosts:
+        vm-web-01:
+...

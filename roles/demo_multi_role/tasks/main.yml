@@ -1,0 +1,5 @@
+---
+- name: "Task in demo_multi_role"
+  ansible.builtin.debug:
+    msg: "Hello from demo_multi_role on {{ inventory_hostname }}"
+...

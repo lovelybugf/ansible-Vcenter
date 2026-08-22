@@ -1,0 +1,16 @@
+---
+- name: "Demo import_role thanh cong handler tren multi-host"
+  hosts: db_servers, web_servers
+  gather_facts: false
+  tasks:
+    - name: "1. Kich hoat trigger handler defined trong role"
+      ansible.builtin.debug:
+        msg: "Chay task tren {{ inventory_hostname }}"
+      notify: "Restart Web Service"
+      changed_when: true
+
+    - name: "2. Load statically demo_multi_role chi tren web_servers"
+      ansible.builtin.import_role:
+        name: demo_multi_role
+      when: "'web_servers' in group_names"
+...

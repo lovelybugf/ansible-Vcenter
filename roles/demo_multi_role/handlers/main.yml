@@ -1,0 +1,5 @@
+---
+- name: "Restart Web Service"
+  ansible.builtin.debug:
+    msg: "Web Service restarted on {{ inventory_hostname }}!"
+...
