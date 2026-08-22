@@ -1,0 +1,17 @@
+---
+- name: "Demo import_role"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "Normal Task 1"
+      ansible.builtin.debug:
+        msg: "This runs FIRST."
+    - name: "Import demo_role"
+      ansible.builtin.import_role:
+        name: demo_role
+      vars:
+        demo_var: "Imported Variable"
+    - name: "Normal Task 2"
+      ansible.builtin.debug:
+        msg: "This runs LAST."
+...

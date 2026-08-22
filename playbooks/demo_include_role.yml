@@ -1,0 +1,17 @@
+---
+- name: "Demo include_role"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "Normal Task 1"
+      ansible.builtin.debug:
+        msg: "Starting loop execution..."
+    - name: "Include demo_role in a loop"
+      ansible.builtin.include_role:
+        name: demo_role
+      vars:
+        demo_var: "{{ item }}"
+      loop:
+        - "Apple"
+        - "Banana"
+...

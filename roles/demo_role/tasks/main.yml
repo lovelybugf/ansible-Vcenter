@@ -1,0 +1,5 @@
+---
+- name: "Task in demo_role"
+  ansible.builtin.debug:
+    msg: "Hello from demo_role! Variable value is: {{ demo_var | default('NOT SET') }}"
+...

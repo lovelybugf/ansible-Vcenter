@@ -3,6 +3,8 @@ roles/*
 !roles/requirements.yml
 !roles/vmware_provision/
 !roles/vmware_management/
+!roles/demo_role/
+
 
 collections/ansible_collections/
 

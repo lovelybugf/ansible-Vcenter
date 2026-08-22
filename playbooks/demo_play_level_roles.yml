@@ -1,0 +1,13 @@
+---
+- name: "Demo Play-level roles"
+  hosts: localhost
+  gather_facts: false
+  vars:
+    demo_var: "Play-level Variable"
+  tasks:
+    - name: "Normal Task in play"
+      ansible.builtin.debug:
+        msg: "This task is defined BEFORE roles section in the file, but it will execute AFTER the role!"
+  roles:
+    - role: demo_role
+...
