@@ -224,9 +224,40 @@ backend k8s_ingress_https
   sudo systemctl enable haproxy
 
 3. Triển khai ứng dụng AWX và xuất ra ngoài qua Ingress (Chạy trên k8s-master bằng user k8sadmin)
-• Cài đặt Rancher Local-Path-Provisioner làm StorageClass mặc định:
+• Tạo Namespace 'awx' và cài đặt StorageClass:
+  # 1. Tạo namespace chuyên biệt cho AWX
+  kubectl create namespace awx
+
+  # 2. Cài đặt Rancher Local-Path-Provisioner làm StorageClass mặc định
   kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
   kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+• Triển khai AWX Operator v2.19.1:
+  # 1. Tạo thư mục tạm để build cấu hình kustomize
+  mkdir -p ~/awx_operator_deploy && cd ~/awx_operator_deploy
+
+  # 2. Tạo file cấu hình kustomization.yaml
+  cat <<EOF > kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - github.com/ansible/awx-operator/config/default?ref=2.19.1
+
+images:
+  - name: quay.io/ansible/awx-operator
+    newTag: 2.19.1
+  - name: gcr.io/kubebuilder/kube-rbac-proxy
+    newName: registry.k8s.io/kubebuilder/kube-rbac-proxy
+    newTag: v0.15.0
+
+namespace: awx
+EOF
+
+  # 3. Chạy lệnh cài đặt Operator
+  kubectl apply -k .
+
+  # 4. Đợi cho CRD của AWX đăng ký thành công trên K8s
+  kubectl wait --for=condition=established crd/awxs.awx.ansible.com --timeout=60s
 
 • Tạo file khai báo cấu hình AWX awx-demo.yml:
   # awx-demo.yml
