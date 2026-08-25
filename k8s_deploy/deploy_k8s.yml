@@ -1,0 +1,258 @@
+---
+- name: Cấu hình chung cho tất cả các Nodes
+  hosts: k8s
+  become: true
+  tasks:
+    - name: Đặt Hostname tương ứng cho từng Node
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Cấu hình tệp /etc/hosts để phân giải tên miền nội bộ
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        block: |
+          {{ hostvars['k8s-master']['ansible_host'] }} k8s-master
+          {{ hostvars['k8s-worker']['ansible_host'] }} k8s-worker
+        state: present
+
+    - name: Cấu hình Sudo không mật khẩu cho user ducnam
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/ducnam
+        line: "ducnam ALL=(ALL) NOPASSWD: ALL"
+        create: true
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Tắt swap trên hệ điều hành ngay lập tức
+      ansible.builtin.command:
+        cmd: swapoff -a
+      changed_when: false
+
+    - name: Xóa cấu hình swap trong fstab để tránh tự bật khi reboot
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: 'swap'
+        state: absent
+
+    - name: Cấu hình load modules overlay và br_netfilter khi khởi động lại
+      ansible.builtin.copy:
+        content: |
+          overlay
+          br_netfilter
+        dest: /etc/modules-load.d/k8s.conf
+        mode: '0644'
+
+    - name: Load các module hạt nhân overlay và br_netfilter
+      ansible.builtin.command:
+        cmd: modprobe {{ item }}
+      loop:
+        - overlay
+        - br_netfilter
+      changed_when: false
+
+    - name: Cấu hình các tham số Sysctl cho mạng Kubernetes
+      ansible.builtin.copy:
+        content: |
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+        dest: /etc/sysctl.d/k8s.conf
+        mode: '0644'
+
+    - name: Áp dụng các thay đổi Sysctl
+      ansible.builtin.command:
+        cmd: sysctl --system
+      changed_when: false
+
+    - name: Cài đặt các thư viện bổ sung cần thiết
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - conntrack
+        state: present
+        update_cache: yes
+
+    - name: Cài đặt Containerd runtime
+      ansible.builtin.apt:
+        name: containerd
+        state: present
+
+    - name: Khởi tạo thư mục cấu hình cho Containerd
+      ansible.builtin.file:
+        path: /etc/containerd
+        state: directory
+        mode: '0755'
+
+    - name: Tạo thư mục lưu trữ Containerd trên ổ đĩa /data
+      ansible.builtin.file:
+        path: /data/containerd
+        state: directory
+        mode: '0711'
+
+    - name: Triển khai cấu hình containerd tùy biến trỏ vào /data
+      ansible.builtin.template:
+        src: templates/containerd_config.toml
+        dest: /etc/containerd/config.toml
+        mode: '0644'
+      notify: Restart containerd
+
+    - name: Đảm bảo Containerd đã khởi chạy
+      ansible.builtin.systemd:
+        name: containerd
+        state: started
+        enabled: yes
+
+    - name: Tạo thư mục /etc/apt/keyrings
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Tải về khóa GPG của repo Kubernetes
+      ansible.builtin.get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
+        dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+        mode: '0644'
+
+    - name: Khai báo Repository của Kubernetes v1.31
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
+        state: present
+        filename: kubernetes
+
+    - name: Cài đặt các gói Kubelet, Kubeadm và Kubectl
+      ansible.builtin.apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+        update_cache: yes
+
+    - name: Ghim phiên bản các gói cài đặt tránh tự nâng cấp
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    - name: Tạo thư mục lưu trữ Kubelet trên ổ đĩa /data
+      ansible.builtin.file:
+        path: /data/kubelet
+        state: directory
+        mode: '0755'
+
+    - name: Cấu hình Kubelet trỏ root-dir về /data và ép IP nội bộ
+      ansible.builtin.copy:
+        content: 'KUBELET_EXTRA_ARGS="--root-dir=/data/kubelet --node-ip={{ hostvars[inventory_hostname]["ansible_host"] }}"'
+        dest: /etc/default/kubelet
+        mode: '0644'
+      notify: Restart kubelet
+
+  handlers:
+    - name: Restart containerd
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
+        daemon_reload: yes
+
+    - name: Restart kubelet
+      ansible.builtin.systemd:
+        name: kubelet
+        state: restarted
+        daemon_reload: yes
+
+- name: Khởi tạo Master Node (Control Plane)
+  hosts: masters
+  become: true
+  tasks:
+    - name: Kiểm tra xem cụm K8s đã được khởi tạo trước đó chưa
+      ansible.builtin.stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubeadmin_stat
+
+    - name: Chạy kubeadm init trên Master Node
+      ansible.builtin.command:
+        cmd: kubeadm init --apiserver-advertise-address={{ hostvars[inventory_hostname]['ansible_host'] }} --pod-network-cidr=192.168.0.0/16
+      register: kubeadm_init
+      when: not kubeadmin_stat.stat.exists
+
+    - name: Tạo thư mục .kube cho user ducnam
+      ansible.builtin.file:
+        path: /home/ducnam/.kube
+        state: directory
+        owner: ducnam
+        group: ducnam
+        mode: '0755'
+
+    - name: Cấu hình Kubeconfig cho user ducnam
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/ducnam/.kube/config
+        remote_src: yes
+        owner: ducnam
+        group: ducnam
+        mode: '0600'
+
+    - name: Tạo user k8sadmin chuyên quản trị K8s
+      ansible.builtin.user:
+        name: k8sadmin
+        password: "{{ '1' | password_hash('sha512') }}"
+        shell: /bin/bash
+        state: present
+
+    - name: Tạo thư mục .kube cho user k8sadmin
+      ansible.builtin.file:
+        path: /home/k8sadmin/.kube
+        state: directory
+        owner: k8sadmin
+        group: k8sadmin
+        mode: '0755'
+
+    - name: Cấu hình Kubeconfig cho user k8sadmin
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/k8sadmin/.kube/config
+        remote_src: yes
+        owner: k8sadmin
+        group: k8sadmin
+        mode: '0600'
+
+    - name: Triển khai CNI Calico để quản lý mạng Pod
+      ansible.builtin.command:
+        cmd: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
+      become: true
+      become_user: k8sadmin
+      register: calico_res
+      changed_when: "'created' in calico_res.stdout or 'configured' in calico_res.stdout"
+
+    - name: Tạo token liên kết và sinh câu lệnh Join
+      ansible.builtin.command:
+        cmd: kubeadm token create --print-join-command
+      register: join_command_raw
+      changed_when: false
+
+    - name: Đăng ký câu lệnh Join làm biến toàn cục
+      ansible.builtin.add_host:
+        name: "K8S_JOIN_HOLDER"
+        join_command: "{{ join_command_raw.stdout }}"
+
+- name: Gia nhập Worker Node vào cụm
+  hosts: workers
+  become: true
+  tasks:
+    - name: Kiểm tra xem Worker đã gia nhập trước đó chưa
+      ansible.builtin.stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf_stat
+
+    - name: Chạy lệnh Join để gia nhập Worker Node
+      ansible.builtin.command:
+        cmd: "{{ hostvars['K8S_JOIN_HOLDER']['join_command'] }}"
+      when: not kubelet_conf_stat.stat.exists

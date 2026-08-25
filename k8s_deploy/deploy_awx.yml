@@ -1,0 +1,180 @@
+---
+- name: Trien khai AWX bang AWX Operator tren Kubernetes
+  hosts: masters
+  become: true
+  become_user: ducnam
+
+  vars:
+    awx_version: "2.19.1"
+    deploy_dir: "~/awx_deploy"
+    rbac_proxy_image: "registry.k8s.io/kubebuilder/kube-rbac-proxy"
+    rbac_proxy_tag: "v0.15.0"
+
+  tasks:
+    - name: 1. Tao thu muc tam de luu cau hinh deploy AWX
+      ansible.builtin.file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: 2. Kiem tra xem StorageClass mac dinh da co chua
+      ansible.builtin.shell:
+        cmd: kubectl get storageclass -o json
+      register: sc_check
+      changed_when: false
+
+    - name: 3. Cai dat Rancher Local-Path-Provisioner lam StorageClass mac dinh (neu chua co)
+      block:
+        - name: 3.1 Apply local-path-storage manifest
+          ansible.builtin.command:
+            cmd: kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+          register: lpp_apply
+          changed_when: "'created' in lpp_apply.stdout or 'configured' in lpp_apply.stdout"
+
+        - name: 3.2 Dat local-path lam StorageClass mac dinh (default)
+          ansible.builtin.command:
+            cmd: >-
+              kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+          register: lpp_patch
+          changed_when: "'patched' in lpp_patch.stdout"
+      when: (sc_check.stdout | from_json)['items'] | length == 0
+
+    - name: 4. Khoi tao file dinh nghia AWX Instance (awx-demo.yml)
+      ansible.builtin.copy:
+        dest: "{{ deploy_dir }}/awx-demo.yml"
+        mode: '0644'
+        content: |
+          ---
+          apiVersion: awx.ansible.com/v1beta1
+          kind: AWX
+          metadata:
+            name: awx-demo
+            namespace: awx
+          spec:
+            service_type: ClusterIP
+            postgres_storage_class: local-path
+            web_extra_volume_mounts: []
+
+    - name: 5. Khoi tao file kustomization.yaml voi override image de tranh loi ImagePullBackOff
+      ansible.builtin.copy:
+        dest: "{{ deploy_dir }}/kustomization.yaml"
+        mode: '0644'
+        content: |
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - github.com/ansible/awx-operator/config/default?ref={{ awx_version }}
+
+          images:
+            - name: quay.io/ansible/awx-operator
+              newTag: {{ awx_version }}
+            - name: gcr.io/kubebuilder/kube-rbac-proxy
+              newName: {{ rbac_proxy_image }}
+              newTag: {{ rbac_proxy_tag }}
+
+          namespace: awx
+
+    - name: 6. Deploy AWX Operator (Cai dat Operator va CRD)
+      ansible.builtin.command:
+        cmd: kubectl apply -k {{ deploy_dir }}/
+      register: kustomize_apply
+      changed_when: "'created' in kustomize_apply.stdout or 'configured' in kustomize_apply.stdout"
+
+    - name: 6.1 Cho doi CRD cua AWX duoc dang ky va thiet lap (established) tren K8s
+      ansible.builtin.command:
+        cmd: kubectl wait --for=condition=established crd/awxs.awx.ansible.com --timeout=60s
+      changed_when: false
+
+    - name: 6.2 Deploy AWX Instance CR
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ deploy_dir }}/awx-demo.yml
+      register: awx_instance_apply
+      changed_when: "'created' in awx_instance_apply.stdout or 'configured' in awx_instance_apply.stdout"
+
+    - name: 6.3 Deploy NGINX Ingress Controller ban baremetal
+      ansible.builtin.command:
+        cmd: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.2/deploy/static/provider/baremetal/deploy.yaml
+      register: ingress_apply
+      changed_when: "'created' in ingress_apply.stdout or 'configured' in ingress_apply.stdout"
+
+    - name: 6.4 Patch Ingress Controller Service sang NodePort co dinh 30080 va 30443
+      ansible.builtin.command:
+        cmd: >-
+          kubectl patch service ingress-nginx-controller -n ingress-nginx --type='json'
+          -p='[{"op":"replace","path":"/spec/ports/0/nodePort","value":30080},{"op":"replace","path":"/spec/ports/1/nodePort","value":30443},{"op":"replace","path":"/spec/type","value":"NodePort"}]'
+      register: ingress_patch
+      changed_when: "'patched' in ingress_patch.stdout"
+
+    - name: 6.5 Tao file cấu hình Ingress cho AWX
+      ansible.builtin.copy:
+        dest: "{{ deploy_dir }}/awx-ingress.yml"
+        mode: '0644'
+        content: |
+          ---
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: awx-demo-ingress
+            namespace: awx
+            annotations:
+              nginx.ingress.kubernetes.io/ssl-redirect: "false"
+          spec:
+            ingressClassName: nginx
+            rules:
+              - host: awx.nampd.com
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: awx-demo-service
+                          port:
+                            number: 80
+
+    - name: 6.6 Apply cấu hình Ingress cho AWX
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ deploy_dir }}/awx-ingress.yml
+      register: awx_ingress_apply
+      changed_when: "'created' in awx_ingress_apply.stdout or 'configured' in awx_ingress_apply.stdout"
+
+    - name: 7. Cho 30 giay de he thong bat dau khoi tao pod
+      ansible.builtin.pause:
+        seconds: 30
+
+    - name: 8. Cho doi pod cua awx-operator-controller-manager san sang (Ready)
+      ansible.builtin.command:
+        cmd: kubectl wait --for=condition=Ready pod -l control-plane=controller-manager -n awx --timeout=300s
+      register: operator_wait
+      changed_when: false
+
+    - name: 9. Cho doi qua trinh Migration va tao Secret admin password hoan tat (co the mat 3-5 phut)
+      ansible.builtin.command:
+        cmd: kubectl get secret awx-demo-admin-password -n awx
+      register: secret_check
+      until: secret_check.rc == 0
+      retries: 30
+      delay: 15
+      ignore_errors: true
+      changed_when: false
+
+    - name: 10. Doc mat khau admin va hien thi thong tin truy cap
+      block:
+        - name: 10.1 Doc mat khau Admin tu Secret K8s
+          ansible.builtin.shell:
+            cmd: kubectl get secret awx-demo-admin-password -n awx -o jsonpath="{.data.password}" | base64 --decode
+          register: password_res
+          changed_when: false
+
+        - name: 10.2 Hien thi thong tin truy cap AWX
+          ansible.builtin.debug:
+            msg:
+              - "=========================================================="
+              - "🎉 AWX DEPLOYMENT SUCCESSFUL!"
+              - "🌐 Access URL: http://awx.nampd.com"
+              - "📌 Note: Map 'awx.nampd.com' to HAProxy Load Balancer IP (172.25.250.8) in your hosts file."
+              - "👤 Username: admin"
+              - "🔑 Password: {{ password_res.stdout }}"
+              - "=========================================================="
+      when: secret_check.rc == 0
+...
