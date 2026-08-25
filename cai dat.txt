@@ -1,0 +1,278 @@
+Hướng Dẫn Triển Khai Thủ Công Từng Bước Cụm Kubernetes (v1.31) và AWX
+
+Phương pháp triển khai: Sử dụng bộ công cụ tiêu chuẩn Kubeadm (phiên bản v1.31) kết hợp với Containerd (CRI), Calico (CNI), NGINX Ingress Controller và HAProxy Load Balancer bên ngoài.
+
+Tài liệu này chuyển đổi toàn bộ quy trình tự động của Playbook thành các câu lệnh shell thủ công, giúp bạn có thể tự tay chạy trên từng VM, chụp ảnh màn hình và lưu lại làm báo cáo học tập/công việc.
+
+________________________________________
+THÔNG SỐ TÀI NGUYÊN PHẦN CỨNG VÀ MẠNG (MÔI TRƯỜNG DỰ ÁN)
+
+Để triển khai thành công cụm Kubernetes và ứng dụng AWX, hạ tầng phần cứng ảo hóa và mạng trên vCenter được thiết lập như sau:
+
+1. Thông số tài nguyên phần cứng (Hardware Specifications)
+• Master Node (k8s-master):
+  - CPU: 2 vCPUs (Tối thiểu khuyến nghị cho Kubernetes Control Plane).
+  - RAM: 4 GB RAM.
+  - Ổ đĩa 1 (OS): 40 GB (Cài hệ điều hành Ubuntu 22.04 LTS).
+  - Ổ đĩa 2 (Data): 50 GB (Được định dạng và mount vào thư mục /data để chứa dữ liệu containerd, kubelet và local storage).
+• Worker Node (k8s-worker):
+  - CPU: 2 vCPUs.
+  - RAM: 4 GB RAM.
+  - Ổ đĩa 1 (OS): 40 GB.
+  - Ổ đĩa 2 (Data): 50 GB (Được định dạng và mount vào thư mục /data).
+
+2. Thông số mạng và Hệ điều hành (OS & Networking)
+• Hệ điều hành: Ubuntu 22.04.4 LTS Server Edition.
+  - Kiểu kết nối card mạng: VMware VMXNET3 (đáp ứng băng thông tốc độ cao).
+  - Mạng LAN nội bộ (Subnet): 172.25.250.0/24.
+• Thông tin định tuyến:
+  - Máy Master (k8s-master): IP 172.25.250.20
+  - Máy Worker (k8s-worker): IP 172.25.250.30
+  - Máy Load Balancer (HAProxy): IP 172.25.250.8
+  - Gateway mặc định: 172.25.250.254 (hoặc trỏ ra route Internet tùy mạng của bạn)
+  - DNS Server: 8.8.8.8 và 1.1.1.1 để phân giải thư viện Kubernetes công cộng.
+• Dải mạng ảo của cụm Kubernetes (K8s Networking):
+  - Pod CIDR (Calico): 192.168.0.0/16 (Dải IP tự động cấp phát cho các Pod).
+  - Service CIDR: 10.96.0.0/12 (Dải IP mạng dịch vụ ảo trong cụm K8s).
+
+________________________________________
+PHẦN I: THIẾT LẬP HỆ ĐIỀU HÀNH BAN ĐẦU (Chạy trên CẢ 2 NODE)
+
+Thực hiện đăng nhập bằng tài khoản có quyền quản trị tối cao (root hoặc sudo -i) trên cả máy k8s-master (172.25.250.20) và k8s-worker (172.25.250.30).
+
+1. Đặt tên Hostname tương ứng cho từng Node
+• Trên máy Master:
+  sudo hostnamectl set-hostname k8s-master
+• Trên máy Worker:
+  sudo hostnamectl set-hostname k8s-worker
+
+2. Cấu hình phân giải tên miền cục bộ
+Mở file cấu hình /etc/hosts trên cả 2 máy:
+  sudo nano /etc/hosts
+Thêm 2 dòng sau vào cuối file để các máy nhận diện nhau:
+  172.25.250.20 k8s-master
+  172.25.250.30 k8s-worker
+
+3. Vô hiệu hóa Swap (Bắt buộc đối với Kubernetes)
+• Tắt swap ngay lập tức:
+  sudo swapoff -a
+• Tắt vĩnh viễn (mở file fstab và comment hoặc xóa dòng chứa swap nếu có):
+  sudo nano /etc/fstab
+  # Nếu có file /swapfile ngầm trên máy, chạy tiếp lệnh:
+  sudo rm -f /swapfile
+
+4. Cấu hình Kernel Modules và Sysctl
+Kích hoạt các module kernel và cấu hình luật chuyển tiếp IP cho mạng Kubernetes.
+• Chạy lệnh sau trên cả 2 máy:
+  sudo modprobe overlay
+  sudo modprobe br_netfilter
+
+  sudo tee /etc/modules-load.d/k8s.conf <<EOF
+overlay
+br_netfilter
+EOF
+
+  sudo tee /etc/sysctl.d/k8s.conf <<EOF
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+
+  sudo sysctl --system
+
+________________________________________
+PHẦN II: CÀI ĐẶT CONTAINER RUNTIME VÀ K8S PACKAGES (Chạy trên CẢ 2 NODE)
+
+1. Cài đặt và cấu hình Containerd Runtime trỏ về /data
+Chúng ta cài đặt containerd và di chuyển phân vùng dữ liệu của nó sang /data/containerd để chống đầy ổ cứng /.
+
+• Chạy lệnh sau trên cả 2 máy:
+  sudo apt-get update
+  sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release conntrack containerd
+
+  sudo mkdir -p /etc/containerd
+  sudo mkdir -p /data/containerd
+
+  sudo tee /etc/containerd/config.toml <<EOF
+version = 2
+root = "/data/containerd"
+state = "/run/containerd"
+
+[grpc]
+  address = "/var/run/containerd/containerd.sock"
+  uid = 0
+  gid = 0
+
+[plugins]
+  [plugins."io.containerd.grpc.v1.cri"]
+    sandbox_image = "registry.k8s.io/pause:3.10"
+    [plugins."io.containerd.grpc.v1.cri".containerd]
+      default_runtime_name = "runc"
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes]
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+          runtime_type = "io.containerd.runc.v2"
+          [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+            SystemdCgroup = true
+EOF
+
+  sudo systemctl daemon-reload
+  sudo systemctl restart containerd
+  sudo systemctl enable containerd
+
+• Kiểm tra dịch vụ containerd:
+  sudo systemctl status containerd
+  containerd config dump | grep root
+  containerd config dump | grep SystemdCgroup
+
+2. Cài đặt Kubeadm, Kubelet và Kubectl (v1.31)
+• Chạy lệnh sau trên cả 2 máy:
+  sudo mkdir -p -m 755 /etc/apt/keyrings
+  curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+  echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+  sudo apt-get update
+  sudo apt-get install -y kubelet kubeadm kubectl
+  sudo apt-mark hold kubelet kubeadm kubectl
+
+• Xác nhận cài đặt thành công:
+  kubeadm version
+  kubectl version --client
+  apt-mark showhold
+
+3. Cấu hình Kubelet trỏ vùng làm việc về /data và ép IP nội bộ
+• Trên máy Master:
+  sudo mkdir -p /data/kubelet
+  echo 'KUBELET_EXTRA_ARGS="--root-dir=/data/kubelet --node-ip=172.25.250.20"' | sudo tee /etc/default/kubelet
+  sudo systemctl daemon-reload
+  sudo systemctl restart kubelet
+
+• Trên máy Worker:
+  sudo mkdir -p /data/kubelet
+  echo 'KUBELET_EXTRA_ARGS="--root-dir=/data/kubelet --node-ip=172.25.250.30"' | sudo tee /etc/default/kubelet
+  sudo systemctl daemon-reload
+  sudo systemctl restart kubelet
+
+________________________________________
+PHẦN III: KHỞI TẠO CỤM VÀ LIÊN KẾT NODE
+
+1. Khởi tạo Control Plane (CHỈ thực hiện trên k8s-master)
+• Chạy lệnh init khởi tạo trên máy Master:
+  sudo kubeadm init --apiserver-advertise-address=172.25.250.20 --pod-network-cidr=192.168.0.0/16
+
+• Cấu hình quyền chạy lệnh kubectl cho cả tài khoản root và tài khoản thường k8sadmin để bảo mật:
+  # Cấu hình cho user root:
+  mkdir -p /root/.kube
+  cp -i /etc/kubernetes/admin.conf /root/.kube/config
+  chown root:root /root/.kube/config
+
+  # Tạo user k8sadmin chuyên quản trị:
+  sudo adduser k8sadmin
+  # (Thiết lập mật khẩu là 1 khi hệ thống yêu cầu)
+  sudo mkdir -p /home/k8sadmin/.kube
+  sudo cp -i /etc/kubernetes/admin.conf /home/k8sadmin/.kube/config
+  sudo chown -R k8sadmin:k8sadmin /home/k8sadmin/.kube
+
+• Chuyển sang tài khoản k8sadmin để thao tác với cụm:
+  su - k8sadmin
+
+• Cài đặt Calico CNI (Chạy bằng user k8sadmin):
+  kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
+
+2. Gia nhập Worker Node vào cụm (CHỈ thực hiện trên k8s-worker)
+Dán câu lệnh kubeadm join bạn đã copy từ kết quả của Master Node và chạy với quyền sudo trên máy Worker:
+  sudo kubeadm join 172.25.250.20:6443 --token <TOKEN_CỦA_BẠN> --discovery-token-ca-cert-hash sha256:<HASH_CỦA_BẠN>
+
+3. Kiểm tra kết quả (CHỈ chạy trên k8s-master bằng user k8sadmin)
+  kubectl get nodes -o wide
+• Kết quả hiển thị cả k8s-master và k8s-worker ở trạng thái Ready và INTERNAL-IP nhận đúng dải 172.25.250.x là thành công.
+
+________________________________________
+PHẦN IV: CÀI ĐẶT INGRESS CONTROLLER, HAPROXY LOAD BALANCER VÀ DEPLOY AWX
+
+1. Triển khai NGINX Ingress Controller trên Kubernetes (Chạy trên k8s-master bằng user k8sadmin)
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.2/deploy/static/provider/baremetal/deploy.yaml
+  
+  # Chờ các Pod running ổn định, sau đó chạy lệnh patch cố định cổng NodePort 30080 và 30443:
+  kubectl patch service ingress-nginx-controller -n ingress-nginx --type='json' -p='[{"op":"replace","path":"/spec/ports/0/nodePort","value":30080},{"op":"replace","path":"/spec/ports/1/nodePort","value":30443},{"op":"replace","path":"/spec/type","value":"NodePort"}]'
+
+2. Thiết lập HAProxy Load Balancer trên máy chủ 172.25.250.8 (Chạy trên máy 172.25.250.8)
+• Cài đặt HAProxy:
+  sudo apt-get update && sudo apt-get install -y haproxy
+• Thêm cấu hình định tuyến sau vào cuối file /etc/haproxy/haproxy.cfg:
+
+frontend http_front
+    bind *:80
+    default_backend k8s_ingress_http
+
+frontend https_front
+    bind *:443
+    default_backend k8s_ingress_https
+
+backend k8s_ingress_http
+    balance roundrobin
+    server node-master 172.25.250.20:30080 check
+    server node-worker 172.25.250.30:30080 check
+
+backend k8s_ingress_https
+    balance roundrobin
+    server node-master 172.25.250.20:30443 check
+    server node-worker 172.25.250.30:30443 check
+
+• Khởi động lại dịch vụ HAProxy:
+  sudo systemctl restart haproxy
+  sudo systemctl enable haproxy
+
+3. Triển khai ứng dụng AWX và xuất ra ngoài qua Ingress (Chạy trên k8s-master bằng user k8sadmin)
+• Cài đặt Rancher Local-Path-Provisioner làm StorageClass mặc định:
+  kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+  kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+• Tạo file khai báo cấu hình AWX awx-demo.yml:
+  # awx-demo.yml
+  ---
+  apiVersion: awx.ansible.com/v1beta1
+  kind: AWX
+  metadata:
+    name: awx-demo
+    namespace: awx
+  spec:
+    service_type: ClusterIP  # Sử dụng ClusterIP để giao tiếp qua Ingress
+    postgres_storage_class: local-path
+
+  # Chạy lệnh triển khai:
+  kubectl apply -f awx-demo.yml
+
+• Tạo file cấu hình định tuyến Ingress cho AWX awx-ingress.yml:
+  # awx-ingress.yml
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: awx-demo-ingress
+    namespace: awx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  spec:
+    ingressClassName: nginx
+    rules:
+      - host: awx.example.com
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: awx-demo-service
+                  port:
+                    number: 80
+
+  # Chạy lệnh triển khai Ingress:
+  kubectl apply -f awx-ingress.yml
+
+4. Nghiệm thu kết quả truy cập từ bên ngoài
+• Trên máy tính kiểm thử của bạn, mở file hosts hệ điều hành và thêm cấu hình phân giải tên miền:
+  172.25.250.8 awx.example.com
+• Mở trình duyệt web, truy cập đường dẫn: http://awx.example.com
+• Đăng nhập bằng user admin và mật khẩu được lấy từ Secret:
+  kubectl get secret awx-demo-admin-password -n awx -o jsonpath="{.data.password}" | base64 --decode
