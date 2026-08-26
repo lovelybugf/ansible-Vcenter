@@ -276,9 +276,28 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 *   Áp dụng mô hình **Block-Rescue-Always** (tương tự try-catch-finally) để tự động hóa kịch bản rollback (giải cứu) và dọn dẹp tài nguyên.
 
 #### 4. Chạy chọn lọc qua Tags và Tối ưu hiệu năng
-*   Gán thẻ `tags` cho task để chỉ định chạy (`--tags`) hoặc bỏ qua (`--skip-tags`).
-*   Tăng tốc độ bằng cách cấu hình tiến trình song song `forks` và bật `pipelining = True` trong `ansible.cfg`.
-*   Chạy bất đồng bộ bằng `async` và `poll: 0` đối với các tác vụ tốn thời gian.
+*   **A. Chạy chọn lọc các tác vụ thông qua Tags:**
+    *   **Đối tượng có thể gán thẻ (`tags`):**
+        *   **Cấp độ Play:** Gán tag cho toàn bộ các task có trong Play.
+        *   **Cấp độ Task:** Gán tag cho từng task riêng lẻ.
+        *   **Cấp độ Block:** Gán tag cho một khối các lệnh (tất cả các task trong block đều nhận tag này).
+        *   **Cấp độ Role và Import file:** Gán tag cho role trong phần khai báo `roles` hoặc file được nạp bằng `import_tasks` / `import_role`.
+    *   **Sự khác biệt cực kỳ quan trọng giữa Import và Include khi gán thẻ:**
+        *   **Với Import (Tĩnh - Static - `import_tasks` / `import_role`):** Khi gán tag cho tác vụ import, Ansible sẽ **tự động phân bổ tag đó cho tất cả các task con** bên trong file được import.
+        *   **Với Include (Động - Dynamic - `include_tasks` / `include_role`):** Khi gán tag cho tác vụ include, Ansible **chỉ gán tag cho bản thân dòng lệnh include đó**, các task con bên trong sẽ **KHÔNG chạy** khi lọc tag trừ khi chúng cũng được gán tag tương tự hoặc tag `always`.
+    *   **Các lệnh điều khiển Tags:**
+        *   Chỉ chạy các task có tag chỉ định: `ansible-navigator run main.yml --tags "setup,install"`
+        *   Bỏ qua các task có tag chỉ định: `ansible-navigator run main.yml --skip-tags "webserver"`
+        *   Liệt kê tất cả các tag hiện có trong playbook: `ansible-navigator run main.yml --list-tags`
+    *   **Các thẻ đặc biệt (Special Tags):**
+        *   `always`: Tác vụ luôn được thực thi trong mọi lần chạy (dù có lọc tag nào đi nữa), trừ khi bị bỏ qua đích danh bằng `--skip-tags always`.
+        *   `never`: Tác vụ không bao giờ thực thi, trừ khi được gọi đích danh bằng `--tags never`.
+        *   `tagged`: Chỉ chạy các tác vụ được gắn bất kỳ tag nào.
+        *   `untagged`: Chỉ chạy các tác vụ không gắn tag (loại bỏ toàn bộ các tác vụ có tag).
+        *   `all` (Mặc định): Chạy tất cả các tác vụ.
+*   **B. Tối ưu hóa hiệu năng chạy Playbook (Speed Optimization):**
+    *   Tăng tốc độ bằng cấu hình tiến trình song song `forks` (mặc định là 5, tăng lên 50 hoặc 100 trong hệ thống lớn) và bật `pipelining = True` trong `ansible.cfg` để giảm số kết nối SSH trùng lặp.
+    *   Chạy bất đồng bộ bằng `async` (giới hạn thời gian tối đa chạy) và `poll: 0` (Fire and forget - kích hoạt xong chạy tiếp tác vụ sau luôn mà không đứng đợi kết quả).
 
 ---
 
