@@ -1,4 +1,4 @@
-# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
+﻿# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
 
 ---
 
@@ -205,99 +205,64 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 ---
 
 ## Ⅸ. QUẢN LÝ VÀ TỐI ƯU HÓA VIỆC THỰC THI TASK (CHƯƠNG 6)
+
 ### Kiểm soát đặc quyền, xử lý lỗi và tối ưu hiệu năng chạy Playbook
 
 Để kiểm soát chặt chẽ luồng chạy và tối ưu hóa tốc độ thực thi của Ansible Playbook:
 
 #### 1. Kiểm soát leo thang đặc quyền (Privilege Escalation)
-*   ** Các chỉ thị đặc quyền cơ bản:**
-
+*   **Chỉ thị cơ bản:**
     ![Chỉ thị cấu hình đặc quyền](images/config%20directive.png)
-*   ** Các cấp độ cấu hình & Độ ưu tiên (Cái nào ghi đè cái nào):**
-    *   Cấu hình đi từ phạm vi rộng đến hẹp: **Play level** (Toàn playbook) $\rightarrow$ **Block level** (Khối lệnh) $\rightarrow$ **Task level** (Từng tác vụ đơn lẻ).
-    *   **Quy tắc ghi đè:** Cấp độ hẹp hơn sẽ ghi đè cấp độ rộng hơn. Biến set ở phần option của lệnh chạy playbook sẽ ghi đè tất cả (-b -e -K)
-*   ** Các biến kết nối đặc quyền (Connection Variables):**
-
+*   **Precedence (Độ ưu tiên):**
+    *   **Thứ tự ghi đè:** Play level ➔ Block level ➔ Task level (Hẹp nhất, ưu tiên cao nhất).
+    *   **Ghi đè dòng lệnh:** Cờ tham số (`-b`, `-e`, `-K`) ghi đè mọi cấu hình tĩnh trong code.
+*   **Connection Variables (Biến kết nối):**
     ![Biến kết nối đặc quyền](images/connection%20var.png)
+    *   `ansible_become`, `ansible_become_method`, `ansible_become_user`, `ansible_become_password`.
+    *   Cấu hình động theo từng host (Inventory/Vars). Ghi đè được playbook directive nhưng không đè được extra vars.
+*   **Best Practices:**
+    *   *Đặc quyền tối thiểu:* Bật `become: false` toàn cục, chỉ set `become: true` ở các task sửa đổi hệ thống.
+    *   *localhost:* Task kết nối API chạy qua `delegate_to: localhost` phải set `become: false` để tránh lỗi thiếu lệnh sudo cục bộ trong Container/Control Node.
 
-    *   Được khai báo trong Inventory hoặc Group/Host vars để định nghĩa riêng cho từng máy chủ(ghi đè các biến trong playbook nhưng không đè được extra var)
-        *   `ansible_become`: Bật chuyển quyền cho host cụ thể.
-        *   `ansible_become_method` & `ansible_become_user`: Định nghĩa phương thức và user đích cho host.
-        *   `ansible_become_password` (hoặc `ansible_become_pass`): Mật khẩu nhập để leo thang (thường được lưu mã hóa an toàn trong Ansible Vault hoặc AWX Credential).
-*   ** Best Practices:**
-    *   **Nguyên tắc đặc quyền tối thiểu:** Bật `become: false` làm mặc định toàn cục, chỉ set `become: true` ở các task thực sự cần thiết (như cài gói, cấu hình firewall).
-    *   **Tránh lỗi quyền sở hữu:** Không chạy các tác vụ tạo tệp tin của người dùng thường bằng quyền root để tránh lỗi `Permission Denied` sau này.
-
-#### 2. Quản lý Thứ tự Thực thi Task (Controlling Task Execution Order)
-*   **Thứ tự mặc định:** Trong một Play, Ansible luôn thực thi các task của **`roles` trước**, sau đó mới thực thi các task trong khối **`tasks`**, bất kể bạn khai báo khối nào trước trong file code.
-*   **Cơ chế điều khiển thứ tự chạy linh hoạt:**
-    *   **Thực thi Role như một Task:** Dùng module `ansible.builtin.import_role` (Static) hoặc `ansible.builtin.include_role` (Dynamic) để có thể chèn Role chạy xen kẽ giữa các task thường.
-    *   **Khai báo `pre_tasks` và `post_tasks`:** Giúp phá vỡ trật tự chạy mặc định bằng các khối tác vụ chạy trước và sau:
-        *   `pre_tasks`: Khối tác vụ chạy trước khi cài đặt các roles.
-        *   `post_tasks`: Khối tác vụ chạy cuối cùng (sau khi cả tasks và các handlers của play đã hoàn tất).
-*   **Sơ đồ luồng thứ tự thực thi của một Play (Execution Flowchart):**
+#### 2. Quản lý Thứ tự Thực thi Task (Execution Order)
+*   **Trật tự mặc định:** Trong một Play, `roles` luôn chạy trước `tasks` bất kể thứ tự viết trong code.
+*   **Điều khiển luồng linh hoạt:**
+    *   *Role as a Task:* Dùng `import_role` (Tĩnh) hoặc `include_role` (Động) để gọi chạy role xen kẽ giữa các task thường.
+    *   *pre_tasks & post_tasks:*
+        *   `pre_tasks`: Chạy trước `roles`.
+        *   `post_tasks`: Chạy sau `tasks` và sau khi toàn bộ handlers đã chạy xong.
+*   **Luồng thực thi một Play (Execution Flowchart):**
     ```text
-    ┌──────────────────────────────────────────────┐
-    │                 [1] pre_tasks                │
-    └──────────────────────┬───────────────────────┘
-                           ▼
-    ┌──────────────────────────────────────────────┐
-    │     [2] Handlers được notify ở pre_tasks     │
-    └──────────────────────┬───────────────────────┘
-                           ▼
-    ┌──────────────────────────────────────────────┐
-    │                  [3] roles                   │
-    └──────────────────────┬───────────────────────┘
-                           ▼
-    ┌──────────────────────────────────────────────┐
-    │                  [4] tasks                   │
-    └──────────────────────┬───────────────────────┘
-                           ▼
-    ┌──────────────────────────────────────────────┐
-    │  [5] Handlers được notify ở roles & tasks    │
-    └──────────────────────┬───────────────────────┘
-                           ▼
-    ┌──────────────────────────────────────────────┐
-    │                 [6] post_tasks               │
-    └──────────────────────┬───────────────────────┘
-                           ▼
-    ┌──────────────────────────────────────────────┐
-    │     [7] Handlers được notify ở post_tasks    │
-    └──────────────────────────────────────────────┘
+    [1] pre_tasks ➔ [2] pre_tasks handlers ➔ [3] roles ➔ [4] tasks ➔ [5] roles/tasks handlers ➔ [6] post_tasks ➔ [7] post_tasks handlers
     ```
-*   **Cơ chế điều khiển Handlers & Hosts:**
-    *   **Kích hoạt nóng Handlers:** Sử dụng tác vụ `ansible.builtin.meta: flush_handlers` để ép chạy ngay lập tức các handler đã xếp hàng, không cần đợi đến cuối play.
-    *   **Lắng nghe sự kiện (`listen`):** Cho phép một sự kiện thông báo (`notify`) kích hoạt đồng thời nhiều handler khác nhau cùng lắng nghe qua chỉ thị `listen`.
-    *   **Sắp xếp thứ tự Host chạy (`order`):** Điều khiển thứ tự chọn host chạy qua tham số `order` (các giá trị: `inventory`, `reverse_inventory`, `sorted`, `reverse_sorted`, `shuffle`).
+*   **Điều khiển Handlers & Hosts:**
+    *   *Flush Handlers:* Dùng `ansible.builtin.meta: flush_handlers` để ép chạy ngay các handler xếp hàng.
+    *   *listen:* Cho phép nhiều handler khác nhau cùng lắng nghe một sự kiện notify.
+    *   *order (Thứ tự Host):* `inventory` (mặc định), `reverse_inventory`, `sorted`, `reverse_sorted`, `shuffle`.
 
 #### 3. Kiểm soát và xử lý lỗi hệ thống (Task Error Control)
-*   Sử dụng `ignore_errors: true` để bỏ qua lỗi cục bộ của task.
-*   Sử dụng `force_handlers: true` cưỡng ép chạy handlers ngay cả khi playbook bị đứt gãy do lỗi ở task khác.
-*   Áp dụng mô hình **Block-Rescue-Always** (tương tự try-catch-finally) để tự động hóa kịch bản rollback (giải cứu) và dọn dẹp tài nguyên.
+*   `ignore_errors: true`: Bỏ qua lỗi cục bộ của task, tiếp tục chạy.
+*   `force_handlers: true`: Ép chạy các handler đã notify kể cả khi playbook bị lỗi giữa chừng.
+*   **Block-Rescue-Always (Xử lý biệt lệ):**
+    *   `block`: Gom nhóm task thử nghiệm.
+    *   `rescue`: Chạy tác vụ giải cứu / rollback nếu `block` bị lỗi.
+    *   `always`: Luôn chạy (dọn dẹp tài nguyên) dù block thành công hay thất bại.
 
 #### 4. Chạy chọn lọc qua Tags và Tối ưu hiệu năng
-*   **A. Chạy chọn lọc các tác vụ thông qua Tags:**
-    *   **Đối tượng có thể gán thẻ (`tags`):**
-        *   **Cấp độ Play:** Gán tag cho toàn bộ các task có trong Play.
-        *   **Cấp độ Task:** Gán tag cho từng task riêng lẻ.
-        *   **Cấp độ Block:** Gán tag cho một khối các lệnh (tất cả các task trong block đều nhận tag này).
-        *   **Cấp độ Role và Import file:** Gán tag cho role trong phần khai báo `roles` hoặc file được nạp bằng `import_tasks` / `import_role`.
-    *   **Sự khác biệt cực kỳ quan trọng giữa Import và Include khi gán thẻ:**
-        *   **Với Import (Tĩnh - Static - `import_tasks` / `import_role`):** Khi gán tag cho tác vụ import, Ansible sẽ **tự động phân bổ tag đó cho tất cả các task con** bên trong file được import.
-        *   **Với Include (Động - Dynamic - `include_tasks` / `include_role`):** Khi gán tag cho tác vụ include, Ansible **chỉ gán tag cho bản thân dòng lệnh include đó**, các task con bên trong sẽ **KHÔNG chạy** khi lọc tag trừ khi chúng cũng được gán tag tương tự hoặc tag `always`.
-    *   **Các lệnh điều khiển Tags:**
-        *   Chỉ chạy các task có tag chỉ định: `ansible-navigator run main.yml --tags "setup,install"`
-        *   Bỏ qua các task có tag chỉ định: `ansible-navigator run main.yml --skip-tags "webserver"`
-        *   Liệt kê tất cả các tag hiện có trong playbook: `ansible-navigator run main.yml --list-tags`
-    *   **Các thẻ đặc biệt (Special Tags):**
-        *   `always`: Tác vụ luôn được thực thi trong mọi lần chạy (dù có lọc tag nào đi nữa), trừ khi bị bỏ qua đích danh bằng `--skip-tags always`.
-        *   `never`: Tác vụ không bao giờ thực thi, trừ khi được gọi đích danh bằng `--tags never`.
-        *   `tagged`: Chỉ chạy các tác vụ được gắn bất kỳ tag nào.
-        *   `untagged`: Chỉ chạy các tác vụ không gắn tag (loại bỏ toàn bộ các tác vụ có tag).
-        *   `all` (Mặc định): Chạy tất cả các tác vụ.
-*   **B. Tối ưu hóa hiệu năng chạy Playbook (Speed Optimization):**
-    *   Tăng tốc độ bằng cấu hình tiến trình song song `forks` (mặc định là 5, tăng lên 50 hoặc 100 trong hệ thống lớn) và bật `pipelining = True` trong `ansible.cfg` để giảm số kết nối SSH trùng lặp.
-    *   Chạy bất đồng bộ bằng `async` (giới hạn thời gian tối đa chạy) và `poll: 0` (Fire and forget - kích hoạt xong chạy tiếp tác vụ sau luôn mà không đứng đợi kết quả).
+*   **A. Lọc tác vụ bằng Tags:**
+    *   *Phạm vi gán:* Play, task, block, role, import file.
+    *   *Khác biệt Import vs Include:*
+        *   **Import (Static):** Tag gán ở lệnh import sẽ tự động áp dụng cho tất cả task con bên trong.
+        *   **Include (Dynamic):** Tag chỉ gán cho task include; các task con bên trong bắt buộc phải có tag tương ứng hoặc `always` mới chạy.
+    *   *Lọc khi chạy:* `--tags "tag1,tag2"`, `--skip-tags "tag3"`, `--list-tags`.
+    *   *Special Tags:*
+        *   `always`: Luôn chạy, trừ khi dùng `--skip-tags always`.
+        *   `never`: Chỉ chạy khi gọi đích danh qua `--tags never`.
+        *   `tagged` / `untagged` / `all`.
+*   **B. Tối ưu hiệu năng (Speed Optimization):**
+    *   *Forks:* Tăng số tiến trình song song (cấu hình trong `ansible.cfg`).
+    *   *Pipelining:* Bật `pipelining = True` trong `ansible.cfg` để giảm số kết nối SSH.
+    *   *Async (Bất đồng bộ):* Dùng `async` và `poll: 0` (Fire and forget) cho các tác vụ lâu.
 
 ---
 
