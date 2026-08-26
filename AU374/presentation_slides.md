@@ -11,8 +11,8 @@
 6. Giải đáp các nội dung thảo luận chưa rõ ở buổi thuyết trình trước.
 7. **Thực hành tốt nhất (Best Practices)** khi phát triển dự án Ansible.
 8. Quản lý và Tối ưu hóa việc Thực thi Task (Chương 6).
-9. Biến đổi dữ liệu với Filters và Plug-ins (Chương 7).
-10. Điều phối cập nhật cuốn chiếu (Chương 8).
+9. Điều phối cập nhật cuốn chiếu (Chương 8).
+10. Biến đổi dữ liệu với Filters và Plug-ins (Chương 7).
 11. Tạo Ansible Collections và Môi trường thực thi EE (Chương 9).
 
 
@@ -225,7 +225,28 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 
 ---
 
-## Ⅹ. BIẾN ĐỔI DỮ LIỆU VỚI FILTERS VÀ PLUG-INS (CHƯƠNG 7)
+## Ⅹ. ĐIỀU PHỐI CẬP NHẬT CUỐN CHIẾU (CHƯƠNG 8)
+### Chiến lược nâng cấp hệ thống giảm thiểu tối đa thời gian gián đoạn (Zero Downtime)
+
+Khi triển khai trên quy mô lớn, việc điều phối cập nhật cuốn chiếu là rất quan trọng để đảm bảo tính liên tục của dịch vụ:
+
+#### 1. Cơ chế Ủy quyền thực thi (Delegation)
+*   **`delegate_to`**: Ủy quyền chạy task liên quan đến máy chủ đích trên một máy chủ khác (ví dụ: đứng từ máy Control Node gọi API tắt/bật cổng của máy chủ đích trên Load Balancer).
+*   **`delegate_facts`**: Cho phép ghi nhận dữ kiện (facts) thu thập được vào bộ biến của máy chủ đích thay vì máy chạy ủy quyền.
+
+#### 2. Phân bổ công việc song song bằng `serial`
+*   Giới hạn số lượng máy chủ được cập nhật trong từng đợt để tránh làm sập toàn bộ hệ thống cùng lúc:
+    *   **Theo số lượng cứng:** `serial: 2` (mỗi đợt chạy tối đa 2 máy).
+    *   **Theo phần trăm:** `serial: "30%"`
+    *   **Theo lũy tiến:** `serial: [1, 5, "20%"]` (đợt đầu chạy 1 máy để test lỗi, đợt sau tăng dần).
+
+#### 3. Vòng đời cập nhật cuốn chiếu và bảo vệ lỗi
+*   Sử dụng khối nhiệm vụ đặc biệt `pre_tasks` (gỡ máy khỏi LB) và `post_tasks` (gắn lại máy vào LB).
+*   Cấu hình **`max_fail_percentage`** để tự động dừng khẩn cấp toàn bộ Playbook nếu tỷ lệ lỗi trong một đợt vượt quá ngưỡng quy định (ví dụ: >25% số máy chủ lỗi).
+
+---
+
+## Ⅺ. BIẾN ĐỔI DỮ LIỆU VỚI FILTERS VÀ PLUG-INS (CHƯƠNG 7)
 ### Xử lý logic và biến đổi dữ liệu phức tạp trong Playbook
 
 Ansible cung cấp các công cụ mạnh mẽ để thao tác và biến đổi dữ liệu một cách linh hoạt:
@@ -244,27 +265,6 @@ Ansible cung cấp các công cụ mạnh mẽ để thao tác và biến đổi
 *   Sử dụng vòng lặp chờ điều kiện bằng `until` kết hợp `retries` và `delay` (chờ dịch vụ lên thành công).
 *   Lặp danh sách lồng nhau bằng bộ lọc `subelements`.
 *   Xác thực và phân tách thông tin địa chỉ mạng (Subnet, IP, Netmask) bằng filter chuyên dụng `ipaddr`.
-
----
-
-## Ⅺ. ĐIỀU PHỐI CẬP NHẬT CUỐN CHIẾU (CHƯƠNG 8)
-### Chiến lược nâng cấp hệ thống giảm thiểu tối đa thời gian gián đoạn (Zero Downtime)
-
-Khi triển khai trên quy mô lớn, việc điều phối cập nhật cuốn chiếu là rất quan trọng để đảm bảo tính liên tục của dịch vụ:
-
-#### 1. Cơ chế Ủy quyền thực thi (Delegation)
-*   **`delegate_to`**: Ủy quyền chạy task liên quan đến máy chủ đích trên một máy chủ khác (ví dụ: đứng từ máy Control Node gọi API tắt/bật cổng của máy chủ đích trên Load Balancer).
-*   **`delegate_facts`**: Cho phép ghi nhận dữ kiện (facts) thu thập được vào bộ biến của máy chủ đích thay vì máy chạy ủy quyền.
-
-#### 2. Phân bổ công việc song song bằng `serial`
-*   Giới hạn số lượng máy chủ được cập nhật trong từng đợt để tránh làm sập toàn bộ hệ thống cùng lúc:
-    *   **Theo số lượng cứng:** `serial: 2` (mỗi đợt chạy tối đa 2 máy).
-    *   **Theo phần trăm:** `serial: "30%"`
-    *   **Theo lũy tiến:** `serial: [1, 5, "20%"]` (đợt đầu chạy 1 máy để test lỗi, đợt sau tăng dần).
-
-#### 3. Vòng đời cập nhật cuốn chiếu và bảo vệ lỗi
-*   Sử dụng khối nhiệm vụ đặc biệt `pre_tasks` (gỡ máy khỏi LB) và `post_tasks` (gắn lại máy vào LB).
-*   Cấu hình **`max_fail_percentage`** để tự động dừng khẩn cấp toàn bộ Playbook nếu tỷ lệ lỗi trong một đợt vượt quá ngưỡng quy định (ví dụ: >25% số máy chủ lỗi).
 
 ---
 
