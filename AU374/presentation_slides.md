@@ -1,4 +1,4 @@
-﻿# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
+# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
 
 ---
 
@@ -240,15 +240,7 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
     *   *listen:* Cho phép nhiều handler khác nhau cùng lắng nghe một sự kiện notify.
     *   *order (Thứ tự Host):* `inventory` (mặc định), `reverse_inventory`, `sorted`, `reverse_sorted`, `shuffle`.
 
-#### 3. Kiểm soát và xử lý lỗi hệ thống (Task Error Control)
-*   `ignore_errors: true`: Bỏ qua lỗi cục bộ của task, tiếp tục chạy.
-*   `force_handlers: true`: Ép chạy các handler đã notify kể cả khi playbook bị lỗi giữa chừng.
-*   **Block-Rescue-Always (Xử lý biệt lệ):**
-    *   `block`: Gom nhóm task thử nghiệm.
-    *   `rescue`: Chạy tác vụ giải cứu / rollback nếu `block` bị lỗi.
-    *   `always`: Luôn chạy (dọn dẹp tài nguyên) dù block thành công hay thất bại.
-
-#### 4. Chạy chọn lọc qua Tags và Tối ưu hiệu năng
+#### 3. Chạy chọn lọc qua Tags và Tối ưu hiệu năng
 *   **A. Lọc tác vụ bằng Tags:**
     *   *Phạm vi gán:* Play, task, block, role, import file.
     *   *Khác biệt Import vs Include:*
