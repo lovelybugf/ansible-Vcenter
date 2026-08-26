@@ -228,17 +228,7 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
     *   **Nguyên tắc đặc quyền tối thiểu:** Bật `become: false` làm mặc định toàn cục, chỉ set `become: true` ở các task thực sự cần thiết (như cài gói, cấu hình firewall).
     *   **Tránh lỗi quyền sở hữu:** Không chạy các tác vụ tạo tệp tin của người dùng thường bằng quyền root để tránh lỗi `Permission Denied` sau này.
 
-#### 2. Kiểm soát và xử lý lỗi hệ thống (Task Error Control)
-*   Sử dụng `ignore_errors: true` để bỏ qua lỗi cục bộ của task.
-*   Sử dụng `force_handlers: true` cưỡng ép chạy handlers ngay cả khi playbook bị đứt gãy do lỗi ở task khác.
-*   Áp dụng mô hình **Block-Rescue-Always** (tương tự try-catch-finally) để tự động hóa kịch bản rollback (giải cứu) và dọn dẹp tài nguyên.
-
-#### 3. Chạy chọn lọc qua Tags và Tối ưu hiệu năng
-*   Gán thẻ `tags` cho task để chỉ định chạy (`--tags`) hoặc bỏ qua (`--skip-tags`).
-*   Tăng tốc độ bằng cách cấu hình tiến trình song song `forks` và bật `pipelining = True` trong `ansible.cfg`.
-*   Chạy bất đồng bộ bằng `async` và `poll: 0` đối với các tác vụ tốn thời gian.
-
-#### 4. Quản lý Thứ tự Thực thi Task (Controlling Task Execution Order)
+#### 2. Quản lý Thứ tự Thực thi Task (Controlling Task Execution Order)
 *   **Thứ tự mặc định:** Trong một Play, Ansible luôn thực thi các task của **`roles` trước**, sau đó mới thực thi các task trong khối **`tasks`**, bất kể bạn khai báo khối nào trước trong file code.
 *   **Cơ chế điều khiển thứ tự chạy linh hoạt:**
     *   **Thực thi Role như một Task:** Dùng module `ansible.builtin.import_role` (Static) hoặc `ansible.builtin.include_role` (Dynamic) để có thể chèn Role chạy xen kẽ giữa các task thường.
@@ -279,6 +269,16 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
     *   **Kích hoạt nóng Handlers:** Sử dụng tác vụ `ansible.builtin.meta: flush_handlers` để ép chạy ngay lập tức các handler đã xếp hàng, không cần đợi đến cuối play.
     *   **Lắng nghe sự kiện (`listen`):** Cho phép một sự kiện thông báo (`notify`) kích hoạt đồng thời nhiều handler khác nhau cùng lắng nghe qua chỉ thị `listen`.
     *   **Sắp xếp thứ tự Host chạy (`order`):** Điều khiển thứ tự chọn host chạy qua tham số `order` (các giá trị: `inventory`, `reverse_inventory`, `sorted`, `reverse_sorted`, `shuffle`).
+
+#### 3. Kiểm soát và xử lý lỗi hệ thống (Task Error Control)
+*   Sử dụng `ignore_errors: true` để bỏ qua lỗi cục bộ của task.
+*   Sử dụng `force_handlers: true` cưỡng ép chạy handlers ngay cả khi playbook bị đứt gãy do lỗi ở task khác.
+*   Áp dụng mô hình **Block-Rescue-Always** (tương tự try-catch-finally) để tự động hóa kịch bản rollback (giải cứu) và dọn dẹp tài nguyên.
+
+#### 4. Chạy chọn lọc qua Tags và Tối ưu hiệu năng
+*   Gán thẻ `tags` cho task để chỉ định chạy (`--tags`) hoặc bỏ qua (`--skip-tags`).
+*   Tăng tốc độ bằng cách cấu hình tiến trình song song `forks` và bật `pipelining = True` trong `ansible.cfg`.
+*   Chạy bất đồng bộ bằng `async` và `poll: 0` đối với các tác vụ tốn thời gian.
 
 ---
 
