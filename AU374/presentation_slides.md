@@ -211,6 +211,7 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 
 #### 1. Kiểm soát leo thang đặc quyền (Privilege Escalation)
 *   **Ý 1: Các chỉ thị đặc quyền cơ bản:**
+    ![Chỉ thị cấu hình đặc quyền](images/config%20directive.png)
     *   `become`: Bật/tắt tính năng chuyển quyền thực thi (`true`/`false`).
     *   `become_user`: Tài khoản đích cần chuyển sang để chạy tác vụ (mặc định: `root`).
     *   `become_method`: Công cụ dùng để chuyển quyền (mặc định: `sudo`, ngoài ra có `su`, `pbrun`, `doas`...).
@@ -218,6 +219,7 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
     *   Cấu hình đi từ phạm vi rộng đến hẹp: **Play level** (Toàn playbook) $\rightarrow$ **Block level** (Khối lệnh) $\rightarrow$ **Task level** (Từng tác vụ đơn lẻ).
     *   **Quy tắc ghi đè:** Cấp độ hẹp hơn sẽ ghi đè cấp độ rộng hơn. Cấu hình `become` khai báo tại *Task level* có độ ưu tiên cao nhất và sẽ đè cấu hình đã set ở *Block* hay *Play*.
 *   **Ý 3: Các biến kết nối đặc quyền (Connection Variables):**
+    ![Biến kết nối đặc quyền](images/connection%20var.png)
     *   Được khai báo trong Inventory hoặc Group/Host vars để định nghĩa riêng cho từng máy chủ:
         *   `ansible_become`: Bật chuyển quyền cho host cụ thể.
         *   `ansible_become_method` & `ansible_become_user`: Định nghĩa phương thức và user đích cho host.
