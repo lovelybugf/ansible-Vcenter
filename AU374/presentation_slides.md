@@ -210,8 +210,22 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 Để kiểm soát chặt chẽ luồng chạy và tối ưu hóa tốc độ thực thi của Ansible Playbook:
 
 #### 1. Kiểm soát leo thang đặc quyền (Privilege Escalation)
-*   Sử dụng các tham số `become`, `become_user`, và `become_method`.
-*   **Thực hành tốt nhất:** Tránh khai báo `become: true` ở cấp độ Playbook toàn cục. Chỉ bật tại từng Task cụ thể thực sự cần quyền root để giảm thiểu rủi ro bảo mật.
+*   **Ý 1: Các chỉ thị đặc quyền cơ bản:**
+    *   `become`: Bật/tắt tính năng chuyển quyền thực thi (`true`/`false`).
+    *   `become_user`: Tài khoản đích cần chuyển sang để chạy tác vụ (mặc định: `root`).
+    *   `become_method`: Công cụ dùng để chuyển quyền (mặc định: `sudo`, ngoài ra có `su`, `pbrun`, `doas`...).
+*   **Ý 2: Các cấp độ cấu hình & Độ ưu tiên (Cái nào ghi đè cái nào):**
+    *   Cấu hình đi từ phạm vi rộng đến hẹp: **Play level** (Toàn playbook) $\rightarrow$ **Block level** (Khối lệnh) $\rightarrow$ **Task level** (Từng tác vụ đơn lẻ).
+    *   **Quy tắc ghi đè:** Cấp độ hẹp hơn sẽ ghi đè cấp độ rộng hơn. Cấu hình `become` khai báo tại *Task level* có độ ưu tiên cao nhất và sẽ đè cấu hình đã set ở *Block* hay *Play*.
+*   **Ý 3: Các biến kết nối đặc quyền (Connection Variables):**
+    *   Được khai báo trong Inventory hoặc Group/Host vars để định nghĩa riêng cho từng máy chủ:
+        *   `ansible_become`: Bật chuyển quyền cho host cụ thể.
+        *   `ansible_become_method` & `ansible_become_user`: Định nghĩa phương thức và user đích cho host.
+        *   `ansible_become_password` (hoặc `ansible_become_pass`): Mật khẩu nhập để leo thang (thường được lưu mã hóa an toàn trong Ansible Vault hoặc AWX Credential).
+*   **Ý 4: Lời khuyên khi set quyền (Best Practices):**
+    *   **Nguyên tắc đặc quyền tối thiểu:** Bật `become: false` làm mặc định toàn cục, chỉ set `become: true` ở các task thực sự cần thiết (như cài gói, cấu hình firewall).
+    *   **Tránh lỗi quyền sở hữu:** Không chạy các tác vụ tạo tệp tin của người dùng thường bằng quyền root để tránh lỗi `Permission Denied` sau này.
+    *   **Xử lý localhost:** Các task gọi API ngoài (như VMware vCenter API) chạy qua `delegate_to: localhost` bắt buộc phải tắt `become: false` để tránh lỗi thiếu lệnh sudo cục bộ trong Container/Control Node.
 
 #### 2. Kiểm soát và xử lý lỗi hệ thống (Task Error Control)
 *   Sử dụng `ignore_errors: true` để bỏ qua lỗi cục bộ của task.
