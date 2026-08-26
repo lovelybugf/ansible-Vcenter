@@ -210,28 +210,23 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 Để kiểm soát chặt chẽ luồng chạy và tối ưu hóa tốc độ thực thi của Ansible Playbook:
 
 #### 1. Kiểm soát leo thang đặc quyền (Privilege Escalation)
-*   **Ý 1: Các chỉ thị đặc quyền cơ bản:**
+*   ** Các chỉ thị đặc quyền cơ bản:**
 
     ![Chỉ thị cấu hình đặc quyền](images/config%20directive.png)
-
-    *   `become`: Bật/tắt tính năng chuyển quyền thực thi (`true`/`false`).
-    *   `become_user`: Tài khoản đích cần chuyển sang để chạy tác vụ (mặc định: `root`).
-    *   `become_method`: Công cụ dùng để chuyển quyền (mặc định: `sudo`, ngoài ra có `su`, `pbrun`, `doas`...).
-*   **Ý 2: Các cấp độ cấu hình & Độ ưu tiên (Cái nào ghi đè cái nào):**
+*   ** Các cấp độ cấu hình & Độ ưu tiên (Cái nào ghi đè cái nào):**
     *   Cấu hình đi từ phạm vi rộng đến hẹp: **Play level** (Toàn playbook) $\rightarrow$ **Block level** (Khối lệnh) $\rightarrow$ **Task level** (Từng tác vụ đơn lẻ).
-    *   **Quy tắc ghi đè:** Cấp độ hẹp hơn sẽ ghi đè cấp độ rộng hơn. Cấu hình `become` khai báo tại *Task level* có độ ưu tiên cao nhất và sẽ đè cấu hình đã set ở *Block* hay *Play*.
-*   **Ý 3: Các biến kết nối đặc quyền (Connection Variables):**
+    *   **Quy tắc ghi đè:** Cấp độ hẹp hơn sẽ ghi đè cấp độ rộng hơn. Biến set ở phần option của lệnh chạy playbook sẽ ghi đè tất cả (-b -e -K)
+*   ** Các biến kết nối đặc quyền (Connection Variables):**
 
     ![Biến kết nối đặc quyền](images/connection%20var.png)
 
-    *   Được khai báo trong Inventory hoặc Group/Host vars để định nghĩa riêng cho từng máy chủ:
+    *   Được khai báo trong Inventory hoặc Group/Host vars để định nghĩa riêng cho từng máy chủ(ghi đè các biến trong playbook nhưng không đè được extra var)
         *   `ansible_become`: Bật chuyển quyền cho host cụ thể.
         *   `ansible_become_method` & `ansible_become_user`: Định nghĩa phương thức và user đích cho host.
         *   `ansible_become_password` (hoặc `ansible_become_pass`): Mật khẩu nhập để leo thang (thường được lưu mã hóa an toàn trong Ansible Vault hoặc AWX Credential).
-*   **Ý 4: Lời khuyên khi set quyền (Best Practices):**
+*   ** Best Practices:**
     *   **Nguyên tắc đặc quyền tối thiểu:** Bật `become: false` làm mặc định toàn cục, chỉ set `become: true` ở các task thực sự cần thiết (như cài gói, cấu hình firewall).
     *   **Tránh lỗi quyền sở hữu:** Không chạy các tác vụ tạo tệp tin của người dùng thường bằng quyền root để tránh lỗi `Permission Denied` sau này.
-    *   **Xử lý localhost:** Các task gọi API ngoài (như VMware vCenter API) chạy qua `delegate_to: localhost` bắt buộc phải tắt `become: false` để tránh lỗi thiếu lệnh sudo cục bộ trong Container/Control Node.
 
 #### 2. Kiểm soát và xử lý lỗi hệ thống (Task Error Control)
 *   Sử dụng `ignore_errors: true` để bỏ qua lỗi cục bộ của task.
@@ -242,6 +237,48 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 *   Gán thẻ `tags` cho task để chỉ định chạy (`--tags`) hoặc bỏ qua (`--skip-tags`).
 *   Tăng tốc độ bằng cách cấu hình tiến trình song song `forks` và bật `pipelining = True` trong `ansible.cfg`.
 *   Chạy bất đồng bộ bằng `async` và `poll: 0` đối với các tác vụ tốn thời gian.
+
+#### 4. Quản lý Thứ tự Thực thi Task (Controlling Task Execution Order)
+*   **Thứ tự mặc định:** Trong một Play, Ansible luôn thực thi các task của **`roles` trước**, sau đó mới thực thi các task trong khối **`tasks`**, bất kể bạn khai báo khối nào trước trong file code.
+*   **Cơ chế điều khiển thứ tự chạy linh hoạt:**
+    *   **Thực thi Role như một Task:** Dùng module `ansible.builtin.import_role` (Static) hoặc `ansible.builtin.include_role` (Dynamic) để có thể chèn Role chạy xen kẽ giữa các task thường.
+    *   **Khai báo `pre_tasks` và `post_tasks`:** Giúp phá vỡ trật tự chạy mặc định bằng các khối tác vụ chạy trước và sau:
+        *   `pre_tasks`: Khối tác vụ chạy trước khi cài đặt các roles.
+        *   `post_tasks`: Khối tác vụ chạy cuối cùng (sau khi cả tasks và các handlers của play đã hoàn tất).
+*   **Sơ đồ luồng thứ tự thực thi của một Play (Execution Flowchart):**
+    ```text
+    ┌──────────────────────────────────────────────┐
+    │                 [1] pre_tasks                │
+    └──────────────────────┬───────────────────────┘
+                           ▼
+    ┌──────────────────────────────────────────────┐
+    │     [2] Handlers được notify ở pre_tasks     │
+    └──────────────────────┬───────────────────────┘
+                           ▼
+    ┌──────────────────────────────────────────────┐
+    │                  [3] roles                   │
+    └──────────────────────┬───────────────────────┘
+                           ▼
+    ┌──────────────────────────────────────────────┐
+    │                  [4] tasks                   │
+    └──────────────────────┬───────────────────────┘
+                           ▼
+    ┌──────────────────────────────────────────────┐
+    │  [5] Handlers được notify ở roles & tasks    │
+    └──────────────────────┬───────────────────────┘
+                           ▼
+    ┌──────────────────────────────────────────────┐
+    │                 [6] post_tasks               │
+    └──────────────────────┬───────────────────────┘
+                           ▼
+    ┌──────────────────────────────────────────────┐
+    │     [7] Handlers được notify ở post_tasks    │
+    └──────────────────────────────────────────────┘
+    ```
+*   **Cơ chế điều khiển Handlers & Hosts:**
+    *   **Kích hoạt nóng Handlers:** Sử dụng tác vụ `ansible.builtin.meta: flush_handlers` để ép chạy ngay lập tức các handler đã xếp hàng, không cần đợi đến cuối play.
+    *   **Lắng nghe sự kiện (`listen`):** Cho phép một sự kiện thông báo (`notify`) kích hoạt đồng thời nhiều handler khác nhau cùng lắng nghe qua chỉ thị `listen`.
+    *   **Sắp xếp thứ tự Host chạy (`order`):** Điều khiển thứ tự chọn host chạy qua tham số `order` (các giá trị: `inventory`, `reverse_inventory`, `sorted`, `reverse_sorted`, `shuffle`).
 
 ---
 
