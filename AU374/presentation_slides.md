@@ -8,11 +8,11 @@
 3. Ứng dụng **Git** quản lý mã nguồn dự án.
 4. Quản lý **Ansible Collections** & **Execution Environment (EE)**.
 5. Quy trình **Build Custom EE** chuẩn hóa.
-6. Giải đáp các nội dung thảo luận chưa rõ ở buổi thuyết trình trước.
-7. **Thực hành tốt nhất (Best Practices)** khi phát triển dự án Ansible.
+6. **Thực hành tốt nhất (Best Practices)** khi phát triển dự án Ansible.
+7. Giải đáp các nội dung thảo luận chưa rõ ở buổi thuyết trình trước.
 8. Quản lý và Tối ưu hóa việc Thực thi Task (Chương 6).
-9. Điều phối cập nhật cuốn chiếu (Chương 8).
-10. Biến đổi dữ liệu với Filters và Plug-ins (Chương 7).
+9. Biến đổi dữ liệu với Filters và Plug-ins (Chương 7).
+10. Điều phối cập nhật cuốn chiếu (Chương 8).
 11. Tạo Ansible Collections và Môi trường thực thi EE (Chương 9).
 
 
@@ -141,7 +141,23 @@ ansible-builder build -f execution-environment.yml --tag vcenter-1.2-ee-nampd:la
 
 ---
 
-## Ⅶ. GIẢI ĐÁP CÁC NỘI DUNG CHƯA RÕ TRONG BUỔI THUYẾT TRÌNH TRƯỚC
+## Ⅶ. CÁC THỰC HÀNH TỐT NHẤT (BEST PRACTICES) KHI VIẾT CODE ANSIBLE
+### Các thực hành Ansible được khuyến nghị:
+
+*   **Giữ mọi thứ đơn giản**
+    *   **Tối đa hóa khả năng đọc**: Sử dụng tên mô tả chi tiết, ghi chú giải thích và khoảng trống dòng kẻ dọc hợp lý.
+    *   **Tận dụng các Module sẵn có**: Sử dụng các module chuyên dụng có tính Idempotency và định nghĩa tường minh trạng thái mong muốn của tài nguyên.
+*   **Tổ chức khoa học & Hệ thống**
+    *   **Chuẩn hóa cách đặt tên và cấu trúc**: Chuẩn hóa cách đặt tên và cấu trúc thư mục dự án theo cấu trúc Ansible Role.
+    *   **Tạo nội dung có thể tái sử dụng**: Đóng gói các tác vụ lặp lại thành các Role có thể tái sử dụng.
+    *   **Sử dụng Inventory động**: Sử dụng Inventory động của VMware để tự động cập nhật danh sách máy chủ từ vCenter.
+*   **Kiểm thử thường xuyên**
+    *   **Áp dụng cơ chế xử lý lỗi**: Sử dụng khối `block` và `rescue` để tự động xử lý sự cố hoặc rollback khi gặp lỗi.
+    *   **Sử dụng công cụ ansible-lint**: Sử dụng công cụ `ansible-lint` để tự động phát hiện lỗi cú pháp và những đoạn code không chuẩn hóa trước khi commit.
+
+---
+
+## Ⅷ. GIẢI ĐÁP CÁC NỘI DUNG CHƯA RÕ TRONG BUỔI THUYẾT TRÌNH TRƯỚC
 ### Làm rõ về Include/Import, Cơ chế requirements.txt của Python và Dynamic Inventory
 
 ---
@@ -173,34 +189,18 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
     *   **Rủi ro hệ thống:** Không ghi rõ phiên bản sẽ làm mất tính nhất quán và tính lặp lại (Non-reproducible). Lần build hôm nay có thể thành công, nhưng lần build tuần sau có thể bị lỗi do nhà phát triển thư viện bên thứ ba vừa phát hành phiên bản mới có chứa các thay đổi phá vỡ tương thích (breaking changes). 
     *   **Khuyến nghị:** Nên ghi rõ phiên bản (ví dụ: `requests==2.31.0`) để đảm bảo môi trường EE luôn đồng nhất trong mọi lần build, bất kể bạn build ở môi trường online hay disconnected.
 
-
-
 ---
 
 #### 3. Cấu hình Dynamic Inventory từ vCenter có cần khai báo khóa `plugin` không?
 
 ![Ảnh minh họa log đồng bộ Inventory trên AWX](images/awx-log.png)
 
-*   **Câu trả lời:
+*   **Câu trả lời:**
     *   **Đồng bộ trực tiếp bằng tính năng của AWX (Source = VMware vCenter):**
         *   **KHÔNG CẦN** viết file YAML hay khai báo khóa `plugin`. 
         *   Khi ta tạo Inventory Source trên giao diện AWX và chọn loại nguồn là `VMware vCenter`, hệ thống AWX đã tự động cấu hình và gọi ngầm plugin tích hợp sẵn. Ta chỉ việc điền thông tin và lọc máy chủ trực tiếp trên Form giao diện.
 
 ---
-
-## Ⅷ. CÁC THỰC HÀNH TỐT NHẤT (BEST PRACTICES) KHI VIẾT CODE ANSIBLE
-### Các thực hành Ansible được khuyến nghị:
-
-*   **Giữ mọi thứ đơn giản**
-    *   **Tối đa hóa khả năng đọc**: Sử dụng tên mô tả chi tiết, ghi chú giải thích và khoảng trống dòng kẻ dọc hợp lý.
-    *   **Tận dụng các Module sẵn có**: Sử dụng các module chuyên dụng có tính Idempotency và định nghĩa tường minh trạng thái mong muốn của tài nguyên.
-*   **Tổ chức khoa học & Hệ thống**
-    *   **Chuẩn hóa cách đặt tên và cấu trúc**: Chuẩn hóa cách đặt tên và cấu trúc thư mục dự án theo cấu trúc Ansible Role.
-    *   **Tạo nội dung có thể tái sử dụng**: Đóng gói các tác vụ lặp lại thành các Role có thể tái sử dụng.
-    *   **Sử dụng Inventory động**: Sử dụng Inventory động của VMware để tự động cập nhật danh sách máy chủ từ vCenter.
-*   **Kiểm thử thường xuyên**
-    *   **Áp dụng cơ chế xử lý lỗi**: Sử dụng khối `block` và `rescue` để tự động xử lý sự cố hoặc rollback khi gặp lỗi.
-    *   **Sử dụng công cụ ansible-lint**: Sử dụng công cụ `ansible-lint` để tự động phát hiện lỗi cú pháp và những đoạn code không chuẩn hóa trước khi commit.
 
 ---
 
@@ -225,28 +225,7 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 
 ---
 
-## Ⅹ. ĐIỀU PHỐI CẬP NHẬT CUỐN CHIẾU (CHƯƠNG 8)
-### Chiến lược nâng cấp hệ thống giảm thiểu tối đa thời gian gián đoạn (Zero Downtime)
-
-Khi triển khai trên quy mô lớn, việc điều phối cập nhật cuốn chiếu là rất quan trọng để đảm bảo tính liên tục của dịch vụ:
-
-#### 1. Cơ chế Ủy quyền thực thi (Delegation)
-*   **`delegate_to`**: Ủy quyền chạy task liên quan đến máy chủ đích trên một máy chủ khác (ví dụ: đứng từ máy Control Node gọi API tắt/bật cổng của máy chủ đích trên Load Balancer).
-*   **`delegate_facts`**: Cho phép ghi nhận dữ kiện (facts) thu thập được vào bộ biến của máy chủ đích thay vì máy chạy ủy quyền.
-
-#### 2. Phân bổ công việc song song bằng `serial`
-*   Giới hạn số lượng máy chủ được cập nhật trong từng đợt để tránh làm sập toàn bộ hệ thống cùng lúc:
-    *   **Theo số lượng cứng:** `serial: 2` (mỗi đợt chạy tối đa 2 máy).
-    *   **Theo phần trăm:** `serial: "30%"`
-    *   **Theo lũy tiến:** `serial: [1, 5, "20%"]` (đợt đầu chạy 1 máy để test lỗi, đợt sau tăng dần).
-
-#### 3. Vòng đời cập nhật cuốn chiếu và bảo vệ lỗi
-*   Sử dụng khối nhiệm vụ đặc biệt `pre_tasks` (gỡ máy khỏi LB) và `post_tasks` (gắn lại máy vào LB).
-*   Cấu hình **`max_fail_percentage`** để tự động dừng khẩn cấp toàn bộ Playbook nếu tỷ lệ lỗi trong một đợt vượt quá ngưỡng quy định (ví dụ: >25% số máy chủ lỗi).
-
----
-
-## Ⅺ. BIẾN ĐỔI DỮ LIỆU VỚI FILTERS VÀ PLUG-INS (CHƯƠNG 7)
+## Ⅹ. BIẾN ĐỔI DỮ LIỆU VỚI FILTERS VÀ PLUG-INS (CHƯƠNG 7)
 ### Xử lý logic và biến đổi dữ liệu phức tạp trong Playbook
 
 Ansible cung cấp các công cụ mạnh mẽ để thao tác và biến đổi dữ liệu một cách linh hoạt:
@@ -265,6 +244,27 @@ Ansible cung cấp các công cụ mạnh mẽ để thao tác và biến đổi
 *   Sử dụng vòng lặp chờ điều kiện bằng `until` kết hợp `retries` và `delay` (chờ dịch vụ lên thành công).
 *   Lặp danh sách lồng nhau bằng bộ lọc `subelements`.
 *   Xác thực và phân tách thông tin địa chỉ mạng (Subnet, IP, Netmask) bằng filter chuyên dụng `ipaddr`.
+
+---
+
+## Ⅺ. ĐIỀU PHỐI CẬP NHẬT CUỐN CHIẾU (CHƯƠNG 8)
+### Chiến lược nâng cấp hệ thống giảm thiểu tối đa thời gian gián đoạn (Zero Downtime)
+
+Khi triển khai trên quy mô lớn, việc điều phối cập nhật cuốn chiếu là rất quan trọng để đảm bảo tính liên tục của dịch vụ:
+
+#### 1. Cơ chế Ủy quyền thực thi (Delegation)
+*   **`delegate_to`**: Ủy quyền chạy task liên quan đến máy chủ đích trên một máy chủ khác (ví dụ: đứng từ máy Control Node gọi API tắt/bật cổng của máy chủ đích trên Load Balancer).
+*   **`delegate_facts`**: Cho phép ghi nhận dữ kiện (facts) thu thập được vào bộ biến của máy chủ đích thay vì máy chạy ủy quyền.
+
+#### 2. Phân bổ công việc song song bằng `serial`
+*   Giới hạn số lượng máy chủ được cập nhật trong từng đợt để tránh làm sập toàn bộ hệ thống cùng lúc:
+    *   **Theo số lượng cứng:** `serial: 2` (mỗi đợt chạy tối đa 2 máy).
+    *   **Theo phần trăm:** `serial: "30%"`
+    *   **Theo lũy tiến:** `serial: [1, 5, "20%"]` (đợt đầu chạy 1 máy để test lỗi, đợt sau tăng dần).
+
+#### 3. Vòng đời cập nhật cuốn chiếu và bảo vệ lỗi
+*   Sử dụng khối nhiệm vụ đặc biệt `pre_tasks` (gỡ máy khỏi LB) and `post_tasks` (gắn lại máy vào LB).
+*   Cấu hình **`max_fail_percentage`** để tự động dừng khẩn cấp toàn bộ Playbook nếu tỷ lệ lỗi trong một đợt vượt quá ngưỡng quy định (ví dụ: >25% số máy chủ lỗi).
 
 ---
 
