@@ -20,7 +20,19 @@
 #    ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml --tags untagged
 # ==============================================================================
 
-- name: "Playbook Triển khai Web Server thực tế - Demo Chương 6"
+- name: "Play 1 - Tự động cấu hình Sudo không mật khẩu (NOPASSWD) cho ducnam"
+  hosts: web_servers, db_servers
+  gather_facts: false
+  become: false
+  tags: always
+  tasks:
+    - name: "Ghi cấu hình NOPASSWD vào /etc/sudoers.d/ducnam"
+      ansible.builtin.shell: |
+        echo "1" | sudo -S sh -c "echo 'ducnam ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ducnam && chmod 0440 /etc/sudoers.d/ducnam"
+      changed_when: true
+      ignore_errors: true
+
+- name: "Play 2 - Playbook Triển khai Web Server thực tế - Demo Chương 6"
   hosts: web_servers, db_servers
   gather_facts: true          # Thu thập fact để lấy tên hệ điều hành hiển thị lên trang chủ index.html
   become: true                # LEO THANG QUYỀN: Bật become ở cấp độ Play để các tác vụ sửa đổi hệ thống có quyền root
