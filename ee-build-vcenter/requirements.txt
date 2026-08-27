@@ -6,4 +6,5 @@ urllib3
 
 # Requirements for vmware.vmware_rest
 aiohttp
-
+# Requirements for ansible.utils.ipaddr
+netaddr

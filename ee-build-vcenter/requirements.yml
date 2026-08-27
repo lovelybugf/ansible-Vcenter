@@ -10,4 +10,8 @@ collections:
     version: "4.8.5"
   - name: cloud.common
     source: galaxy
+  - name: ansible.posix
+    source: galaxy
+  - name: ansible.utils
+    source: galaxy
 ...
