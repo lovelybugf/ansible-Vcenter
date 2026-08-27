@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo Chapter 6 - Real Workload</title>
+</head>
+<body>
+    <h1>Triển khai Web Server thành công trên {{ inventory_hostname }}</h1>
+    <p>Địa chỉ IP: {{ ansible_host }}</p>
+    <p>Hệ điều hành: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}</p>
+</body>
+</html>

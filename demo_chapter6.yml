@@ -1,63 +1,96 @@
 ---
 # ==============================================================================
-# DEMO RÚT GỌN CHƯƠNG 6 (PRIVILEGE, TAGS, PIPELINING & PROFILING)
-# ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml
+# WORKLOAD THỰC TẾ: TRIỂN KHAI VÀ GIÁM SÁT APACHE WEB SERVER (CHƯƠNG 6)
+# Chạy demo trên máy điều khiển 172.25.250.8 và máy đích 172.25.250.20
+#
+# CÁC KỊCH BẢN CHẠY DEMO ĐỂ KIỂM TRA THẺ TAGS:
+#
+# 1. Chạy tất cả cấu hình thông thường (setup và config):
+#    ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml --tags "setup,config"
+#    -> Chỉ chạy cài đặt và đẩy cấu hình + kiểm tra HTTP phản hồi (vì post-tasks có tag 'always').
+#
+# 2. Chạy tác vụ nguy hiểm reset web server (chỉ chạy khi gọi đích danh):
+#    ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml --tags "db_reset"
+#    -> Task xóa index.html sẽ được chạy (do mang tag 'never' và 'db_reset').
+#
+# 3. Chạy các tác vụ được gắn thẻ (tagged):
+#    ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml --tags tagged
+#
+# 4. Chạy các tác vụ không gắn thẻ (untagged):
+#    ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml --tags untagged
 # ==============================================================================
 
-- name: "Playbook Demo rút gọn Chương 6"
+- name: "Playbook Triển khai Web Server thực tế - Demo Chương 6"
   hosts: web_servers, db_servers
-  gather_facts: false # Tối ưu hóa hiệu năng bằng cách tắt Fact Gathering
+  gather_facts: true          # Thu thập fact để lấy tên hệ điều hành hiển thị lên trang chủ index.html
 
-  tasks:
-    # --------------------------------------------------------------------------
-    # 1. MINH HỌA KIỂM SOÁT ĐẶC QUYỀN TRÊN LOCALHOST (BECOME: FALSE)
-    # --------------------------------------------------------------------------
-    - name: "[LOCAL TASK] Gọi API / Tác vụ local trên Control Node"
+  # --------------------------------------------------------------------------
+  # A. PRE-TASKS: Chuẩn bị kiểm tra ban đầu trước khi chạy tasks chính
+  # --------------------------------------------------------------------------
+  pre_tasks:
+    - name: "[PRE-TASK] Ghi thông báo khởi động tiến trình lên Control Node"
       ansible.builtin.debug:
-        msg: "Chạy local không cần đặc quyền root: delegate_to: localhost và become: false tránh lỗi thiếu lệnh sudo cục bộ"
+        msg: "Bắt đầu triển khai dịch vụ Apache Web Server..."
       delegate_to: localhost
-      become: false
+      become: false           # BEST PRACTICE: Bắt buộc tắt become trên localhost để tránh lỗi sudo cục bộ
+      tags: always            # Luôn luôn chạy tác vụ này
 
-    # --------------------------------------------------------------------------
-    # 2. MINH HỌA FORKS & PIPELINING (HIỆU NĂNG)
-    # --------------------------------------------------------------------------
-    - name: "[PERFORMANCE] Cách xem minh chứng sự khác biệt của Pipelining"
-      ansible.builtin.debug:
-        msg: |
-          ========================================================================
-          CÁCH CHẠY VÀ XEM MINH CHỨNG SỰ KHÁC BIỆT QUA LOG KẾT NỐI (DÙNG CỜ -vvv)
-          ========================================================================
-          1. CHẠY KHÔNG CÓ PIPELINING:
-             ANSIBLE_PIPELINING=False ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml -vvv
-             -> Quan sát log SSH: Bạn sẽ thấy Ansible tạo thư mục tạm, dùng SFTP để đẩy file Python, chmod file, rồi mới thực thi.
-             
-          2. CHẠY CÓ PIPELINING (MẶC ĐỊNH HIỆN TẠI TRONG CONFIG):
-             ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml -vvv
-             -> Quan sát log SSH: Không còn bước tạo thư mục tạm hay sftp nữa. Ansible chạy trực tiếp lệnh: 'python -' và truyền thẳng code qua SSH stdin.
-          
-          - Forks = 50: Cho phép xử lý song song đồng thời tối đa 50 hosts (đã cấu hình trong ansible.cfg).
+  # --------------------------------------------------------------------------
+  # B. TASKS CHÍNH: Cài đặt, Cấu hình và Bật dịch vụ thực tế
+  # --------------------------------------------------------------------------
+  tasks:
+    - name: "[TASK 1 - SETUP] Cài đặt gói Apache Web Server (httpd)"
+      ansible.builtin.package:
+        name: httpd
+        state: present
+      tags: setup             # Gán tag 'setup'
 
-    # --------------------------------------------------------------------------
-    # 3. MINH HỌA SPECIAL TAGS (ALWAYS, NEVER, TAGGED/UNTAGGED)
-    # --------------------------------------------------------------------------
-    - name: "[TAG-ALWAYS] Tác vụ này sẽ luôn luôn chạy"
-      ansible.builtin.debug:
-        msg: "Task nay mang tag 'always'. No se luon duoc chay bat ke ban dung filter --tags nao (tru khi dung --skip-tags always)"
-      tags: always
+    - name: "[TASK 2 - CONFIG] Cấu hình trang chủ index.html từ Template"
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        mode: '0644'
+      tags: config            # Gán tag 'config'
 
-    - name: "[TAG-NEVER] Tác vụ nguy hiểm / khẩn cấp"
-      ansible.builtin.debug:
-        msg: "Task nay mang tag 'never'. No se KHÔNG BAO GIỜ chay tu dong, tru khi ban goi dich danh qua --tags never"
+    - name: "[TASK 3 - SETUP] Khởi động và kích hoạt dịch vụ Apache (httpd)"
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+      notify: Restart Apache
+      tags: setup             # Gán tag 'setup'
+
+    - name: "[TASK 4 - RESET] Xóa bỏ trang chủ index.html (Tác vụ Nguy hiểm)"
+      ansible.builtin.file:
+        path: /var/www/html/index.html
+        state: absent
       tags:
-        - never
-        - reset_db
+        - never               # Tag đặc biệt: ngăn không cho tự động chạy khi chạy bình thường
+        - db_reset            # Chỉ chạy khi chỉ định --tags db_reset
 
-    - name: "[TAG-NORMAL] Tác vụ cấu hình thông thường (Tagged)"
+    - name: "[TASK 5 - UNTAGGED] Tác vụ ghi nhận log local (Không gắn thẻ)"
       ansible.builtin.debug:
-        msg: "Task nay co tag 'setup'. Co the loc bang --tags setup hoac --tags tagged."
-      tags: setup
+        msg: "Ghi nhận: Tiến trình cấu hình đã đi qua các task chính trên {{ inventory_hostname }}."
 
-    - name: "[UNTAGGED TASK] Tác vụ không gắn thẻ (Untagged)"
-      ansible.builtin.debug:
-        msg: "Task nay khong co tag. Co the loc bang --tags untagged."
+  # --------------------------------------------------------------------------
+  # C. POST-TASKS: Kiểm tra, xác thực dịch vụ sau khi deploy xong
+  # --------------------------------------------------------------------------
+  post_tasks:
+    - name: "[POST-TASK] Kiểm tra phản hồi HTTP thực tế từ máy Control Node"
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}"
+        status_code: 200
+        timeout: 5
+      delegate_to: localhost  # Đứng từ Control Node gọi HTTP curl kiểm tra
+      become: false           # Không cần sudo trên Control Node
+      tags: always            # Tag 'always' đảm bảo bước xác thực này luôn được chạy cuối cùng
+
+  # --------------------------------------------------------------------------
+  # D. HANDLERS: Xử lý restart dịch vụ
+  # --------------------------------------------------------------------------
+  handlers:
+    - name: Restart Apache
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
 ...
