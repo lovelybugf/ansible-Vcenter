@@ -1,13 +1,12 @@
 ---
 # ==============================================================================
 # DEMO RÚT GỌN CHƯƠNG 6 (PRIVILEGE, TAGS, PIPELINING & PROFILING)
-# Chạy demo trên máy điều khiển 172.25.250.8 và máy đích 172.25.250.20
-# Lệnh chạy khuyến nghị: ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml
+# ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml
 # ==============================================================================
 
 - name: "Playbook Demo rút gọn Chương 6"
   hosts: web_servers, db_servers
-  gather_facts: false         # Tối ưu hóa hiệu năng bằng cách tắt Fact Gathering
+  gather_facts: false # Tối ưu hóa hiệu năng bằng cách tắt Fact Gathering
 
   tasks:
     # --------------------------------------------------------------------------
@@ -17,17 +16,26 @@
       ansible.builtin.debug:
         msg: "Chạy local không cần đặc quyền root: delegate_to: localhost và become: false tránh lỗi thiếu lệnh sudo cục bộ"
       delegate_to: localhost
-      become: false           # BEST PRACTICE: Bắt buộc tắt become để tránh đòi mật khẩu sudo nội bộ trong Container/Control Node
+      become: false
 
     # --------------------------------------------------------------------------
     # 2. MINH HỌA FORKS & PIPELINING (HIỆU NĂNG)
     # --------------------------------------------------------------------------
-    - name: "[PERFORMANCE] Giải thích Pipelining (Số lần kết nối SSH)"
+    - name: "[PERFORMANCE] Cách xem minh chứng sự khác biệt của Pipelining"
       ansible.builtin.debug:
         msg: |
-          - Không bật Pipelining: Tốn 3 lần kết nối SSH cho mỗi Task (1. SFTP chuyển file python tạm; 2. Chmod file; 3. Chạy file python).
-          - Bật Pipelining (pipelining = True trong ansible.cfg): Tốn đúng 1 kết nối duy nhất (truyền trực tiếp code Python qua stdin và thực thi ngay).
-          - Forks = 50: Cho phép chạy song song đồng thời trên tối đa 50 host thay vì mặc định chỉ 5 host.
+          ========================================================================
+          CÁCH CHẠY VÀ XEM MINH CHỨNG SỰ KHÁC BIỆT QUA LOG KẾT NỐI (DÙNG CỜ -vvv)
+          ========================================================================
+          1. CHẠY KHÔNG CÓ PIPELINING:
+             ANSIBLE_PIPELINING=False ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml -vvv
+             -> Quan sát log SSH: Bạn sẽ thấy Ansible tạo thư mục tạm, dùng SFTP để đẩy file Python, chmod file, rồi mới thực thi.
+             
+          2. CHẠY CÓ PIPELINING (MẶC ĐỊNH HIỆN TẠI TRONG CONFIG):
+             ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml -vvv
+             -> Quan sát log SSH: Không còn bước tạo thư mục tạm hay sftp nữa. Ansible chạy trực tiếp lệnh: 'python -' và truyền thẳng code qua SSH stdin.
+          
+          - Forks = 50: Cho phép xử lý song song đồng thời tối đa 50 hosts (đã cấu hình trong ansible.cfg).
 
     # --------------------------------------------------------------------------
     # 3. MINH HỌA SPECIAL TAGS (ALWAYS, NEVER, TAGGED/UNTAGGED)
