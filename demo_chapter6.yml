@@ -1,95 +1,55 @@
 ---
 # ==============================================================================
-# DEMO TỔNG HỢP KIẾN THỨC CHƯƠNG 6 (MANAGING TASK EXECUTION & PERFORMANCE)
+# DEMO RÚT GỌN CHƯƠNG 6 (PRIVILEGE, TAGS, PIPELINING & PROFILING)
 # Chạy demo trên máy điều khiển 172.25.250.8 và máy đích 172.25.250.20
 # Lệnh chạy khuyến nghị: ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml
 # ==============================================================================
 
-# ------------------------------------------------------------------------------
-# PLAY 1: MINH HỌA GATHER FACTS VS FACT CACHING
-# ------------------------------------------------------------------------------
-- name: "Play 1 - Minh họa Fact Gathering (Thu thập thông tin hệ thống)"
+- name: "Playbook Demo rút gọn Chương 6"
   hosts: web_servers, db_servers
-  gather_facts: true          # BẬT GATHER FACTS: Ansible sẽ kết nối tới host và quét thông tin (mất nhiều thời gian)
+  gather_facts: false         # Tối ưu hóa hiệu năng bằng cách tắt Fact Gathering
+
   tasks:
-    - name: "In ra thông tin hệ điều hành thu thập được qua Fact"
+    # --------------------------------------------------------------------------
+    # 1. MINH HỌA KIỂM SOÁT ĐẶC QUYỀN TRÊN LOCALHOST (BECOME: FALSE)
+    # --------------------------------------------------------------------------
+    - name: "[LOCAL TASK] Gọi API / Tác vụ local trên Control Node"
       ansible.builtin.debug:
-        msg: "Host {{ inventory_hostname }} dang chay he dieu hanh {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
-
-- name: "Play 2 - Minh họa Tối ưu hiệu năng: Tắt Fact Gathering & Dùng Fact Cache"
-  hosts: web_servers, db_servers
-  gather_facts: false         # TẮT GATHER FACTS: Không quét lại thông tin của host nữa để tăng tốc độ chạy
-  tasks:
-    - name: "Sử dụng biến cục bộ thay thế cho Fact (Best Practice)"
-      ansible.builtin.debug:
-        msg: "Dung 'inventory_hostname' ({{ inventory_hostname }}) khong ton thoi gian quet mang so voi dung 'ansible_facts'"
-
-# ------------------------------------------------------------------------------
-# PLAY 3: MINH HỌA ĐIỀU PHỐI TASK, HANDLERS, TAGS VÀ CODE HIỆU QUẢ
-# ------------------------------------------------------------------------------
-- name: "Play 3 - Minh họa Điều phối Task, Handlers, Tags và Tối ưu hóa code"
-  hosts: web_servers, db_servers
-  gather_facts: false
-  order: sorted               # THỨ TỰ HOST: Sắp xếp host chạy theo bảng chữ cái A-Z (đảm bảo log đẹp)
-
-  # [A] PRE-TASKS: Khối tác vụ chạy ĐẦU TIÊN (trước cả các Roles)
-  pre_tasks:
-    - name: "[PRE-TASK] Giả lập tắt cảnh báo giám sát (Ví dụ: Nagios) trên localhost"
-      ansible.builtin.debug:
-        msg: "Dung 'delegate_to: localhost' va 'become: false' de tranh loi sudo trong container"
+        msg: "Chạy local không cần đặc quyền root: delegate_to: localhost và become: false tránh lỗi thiếu lệnh sudo cục bộ"
       delegate_to: localhost
-      become: false
-      notify: "Event: He thong khoi dong"
-      changed_when: true      # changed_when: true giúp kích hoạt notify kể cả khi debug không đổi trạng thái
+      become: false           # BEST PRACTICE: Bắt buộc tắt become để tránh đòi mật khẩu sudo nội bộ trong Container/Control Node
 
-    - name: "[PRE-TASK] Ép chạy nóng các Handler lập tức (Flush Handlers)"
-      ansible.builtin.meta: flush_handlers  # Ép chạy Handler ngay lập tức, không đợi đến cuối Play
-
-  # [B] TASKS CHÍNH
-  tasks:
-    - name: "[TASK 1] Cài đặt gói hiệu quả (Tránh dùng loop)"
-      ansible.builtin.package:
-        name:
-          - curl
-          - wget
-        state: present
-      tags: setup             # TAGS: Dùng để lọc chạy chọn lọc khi gọi --tags setup
-
-    - name: "[TASK 2] Cấu hình file bằng Template (Tránh chạy loop qua lineinfile)"
-      ansible.builtin.template:
-        src: templates/demo_config.j2
-        dest: /tmp/demo_config.conf
-      tags: setup
-
-    - name: "[TASK 3] Gọi Role động bên trong Task (Role as a Task)"
-      ansible.builtin.include_role:
-        name: mock_role
-      tags: always          # TAGS ĐẶC BIỆT: 'always' đảm bảo task này luôn chạy trừ khi bị skip-tags always
-
-    - name: "[TASK 4] Tác vụ Debug nguy hiểm / Khẩn cấp (Chỉ chạy khi gọi đích danh)"
+    # --------------------------------------------------------------------------
+    # 2. MINH HỌA FORKS & PIPELINING (HIỆU NĂNG)
+    # --------------------------------------------------------------------------
+    - name: "[PERFORMANCE] Giải thích Pipelining (Số lần kết nối SSH)"
       ansible.builtin.debug:
-        msg: "LUU Y: Tac vu nguy hiem (db wipe/debug) chi duoc kich hoat khi ban truyen --tags debug"
-      tags:
-        - never               # TAGS ĐẶC BIỆT: 'never' ngăn không cho task chạy trong moi phien chay mac dinh
-        - debug
+        msg: |
+          - Không bật Pipelining: Tốn 3 lần kết nối SSH cho mỗi Task (1. SFTP chuyển file python tạm; 2. Chmod file; 3. Chạy file python).
+          - Bật Pipelining (pipelining = True trong ansible.cfg): Tốn đúng 1 kết nối duy nhất (truyền trực tiếp code Python qua stdin và thực thi ngay).
+          - Forks = 50: Cho phép chạy song song đồng thời trên tối đa 50 host thay vì mặc định chỉ 5 host.
 
-  # [C] POST-TASKS: Khối tác vụ chạy CUỐI CÙNG (sau khi cả Tasks và Handlers đã chạy xong)
-  post_tasks:
-    - name: "[POST-TASK] Giả lập bật lại cảnh báo giám sát sau khi hoàn tất bảo trì"
+    # --------------------------------------------------------------------------
+    # 3. MINH HỌA SPECIAL TAGS (ALWAYS, NEVER, TAGGED/UNTAGGED)
+    # --------------------------------------------------------------------------
+    - name: "[TAG-ALWAYS] Tác vụ này sẽ luôn luôn chạy"
       ansible.builtin.debug:
-        msg: "He thong da hoan tat cap nhat. Bat lai canh bao Nagios."
+        msg: "Task nay mang tag 'always'. No se luon duoc chay bat ke ban dung filter --tags nao (tru khi dung --skip-tags always)"
       tags: always
 
-  # [D] HANDLERS
-  handlers:
-    # LẮNG NGHE SỰ KIỆN: Nhiều handler cùng lắng nghe một sự kiện kích hoạt (listen directive)
-    - name: Handler 1 - Ghi log he thong
+    - name: "[TAG-NEVER] Tác vụ nguy hiểm / khẩn cấp"
       ansible.builtin.debug:
-        msg: "-> [HANDLER 1] Ghi nhan lich su khoi dong he thong tren {{ inventory_hostname }}."
-      listen: "Event: He thong khoi dong"
+        msg: "Task nay mang tag 'never'. No se KHÔNG BAO GIỜ chay tu dong, tru khi ban goi dich danh qua --tags never"
+      tags:
+        - never
+        - reset_db
 
-    - name: Handler 2 - Gui canh bao Slack
+    - name: "[TAG-NORMAL] Tác vụ cấu hình thông thường (Tagged)"
       ansible.builtin.debug:
-        msg: "-> [HANDLER 2] Da gui tin nhan thong bao he thong khoi dong."
-      listen: "Event: He thong khoi dong"
+        msg: "Task nay co tag 'setup'. Co the loc bang --tags setup hoac --tags tagged."
+      tags: setup
+
+    - name: "[UNTAGGED TASK] Tác vụ không gắn thẻ (Untagged)"
+      ansible.builtin.debug:
+        msg: "Task nay khong co tag. Co the loc bang --tags untagged."
 ...
