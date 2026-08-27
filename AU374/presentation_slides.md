@@ -1,4 +1,4 @@
-# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
+﻿# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
 
 ---
 
@@ -251,11 +251,23 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
         *   `always`: Luôn chạy, trừ khi dùng `--skip-tags always`.
         *   `never`: Chỉ chạy khi gọi đích danh qua `--tags never`.
         *   `tagged` / `untagged` / `all`.
-*   **B. Tối ưu hiệu năng (Speed Optimization):**
-    *   *Forks:* Tăng số tiến trình song song (cấu hình trong `ansible.cfg`).
-    *   *Pipelining:* Bật `pipelining = True` trong `ansible.cfg` để giảm số kết nối SSH.
-    *   *Async (Bất đồng bộ):* Dùng `async` và `poll: 0` (Fire and forget) cho các tác vụ lâu.
-
+*   **B. Tối ưu hiệu năng Playbook (Speed Optimization):**
+    *   **Tối ưu Fact Gathering:**
+        *   *Tắt Facts:* Set `gather_facts: false` nếu không dùng.
+        *   *Lọc Facts:* Dùng `gather_subset` (như `network`) để chỉ quét thông tin cần thiết.
+        *   *Fact Cache:* Đặt `gathering = smart` hoặc bật *Enable fact storage* trên AWX để dùng lại cache.
+    *   **Forks & Pipelining:**
+        *   *Tăng Forks:* Cấu hình `forks = 50` hoặc `100` trong `ansible.cfg` để chạy song song nhiều host hơn.
+        *   *Bật Pipelining:* Đặt `pipelining = True` trong `ansible.cfg` để giảm kết nối SSH (yêu cầu tắt `requiretty` ở host đích).
+    *   **Viết code hiệu quả:**
+        *   *DNF/Apt:* Khai báo danh sách package trực tiếp `name: [pkg1, pkg2]` thay vì dùng `loop` (chạy trong 1 transaction).
+        *   *Copy lớn:* Dùng `synchronize` (rsync) thay cho `copy`.
+        *   *Cấu hình file:* Dùng `template` thay vì chạy `loop` qua `lineinfile`.
+        *   *Async:* Dùng `async` và `poll: 0` (Fire and forget) cho task tốn thời gian.
+    *   **Đo lường thời gian (Profiling):**
+        *   Bật callback plug-in trong `ansible.cfg`:
+            `callbacks_enabled = ansible.posix.timer, ansible.posix.profile_tasks, ansible.posix.profile_roles`
+        *   *Tác dụng:* Thống kê thời gian chạy chi tiết của từng Task/Role để tìm điểm nghẽn.
 ---
 
 ## Ⅹ. BIẾN ĐỔI DỮ LIỆU VỚI FILTERS VÀ PLUG-INS (CHƯƠNG 7)
