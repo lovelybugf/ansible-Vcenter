@@ -1,0 +1,3 @@
+- name: Tác vụ chạy bên trong Role (Mock Role)
+  ansible.builtin.debug:
+    msg: "-> [ROLE EXECUTION] Tác vụ này chạy từ bên trong mock_role."

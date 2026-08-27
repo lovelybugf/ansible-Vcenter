@@ -1,0 +1,59 @@
+---
+- name: Playbook Demo Tổng Hợp Kiến Thức Chương 6 (Managing Task Execution)
+  hosts: k8s
+  gather_facts: false       # TỐI ƯU HIỆU NĂNG: Tắt tự động thu thập fact nếu không dùng
+  order: sorted             # THỨ TỰ HOST: Sắp xếp các host chạy theo thứ tự A-Z
+
+  pre_tasks:
+    - name: "[PRE-TASK] Chạy tác vụ local chuẩn bị (Không leo thang đặc quyền)"
+      ansible.builtin.debug:
+        msg: "Đang chuẩn bị file cấu hình trên máy Control Node..."
+      delegate_to: localhost
+      become: false         # BEST PRACTICE: Bắt buộc tắt become khi chạy trên localhost
+      notify: "Event: Khoi chay he thong"
+
+    - name: "[PRE-TASK] Ép chạy nóng các Handler lập tức (Flush Handlers)"
+      ansible.builtin.meta: flush_handlers  # FLUSH HANDLERS: Chạy ngay các handler đang xếp hàng
+
+  tasks:
+    - name: "[TASK 1] Tác vụ thường - Chạy trước khi gọi Role"
+      ansible.builtin.debug:
+        msg: "Bắt đầu chạy phần Tasks chính."
+
+    - name: "[TASK 2] Thực thi Role như một tác vụ (Role as a Task)"
+      ansible.builtin.include_role:
+        name: mock_role
+      tags: always          # TAGS ĐẶC BIỆT: 'always' đảm bảo task này luôn chạy khi lọc tag
+
+    - name: "[TASK 3] Cài đặt gói hiệu quả (Tránh dùng loop)"
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+        state: present
+      tags: setup           # LỌC TÁC VỤ: Tag dùng để chạy chọn lọc qua dòng lệnh
+
+    - name: "[TASK 4] Cấu hình file bằng Template (Tránh chạy loop qua lineinfile)"
+      ansible.builtin.template:
+        src: templates/demo_config.j2
+        dest: /tmp/demo_config.conf
+      tags: setup
+
+  post_tasks:
+    - name: "[POST-TASK] Tác vụ dọn dẹp cuối cùng sau khi hoàn tất"
+      ansible.builtin.debug:
+        msg: "Hoàn thành toàn bộ quy trình. Bật lại cảnh báo giám sát."
+      tags: always
+
+  handlers:
+    # LẮNG NGHE SỰ KIỆN: Nhiều handler cùng lắng nghe một sự kiện kích hoạt (listen directive)
+    - name: Handler 1 - Thao tác hệ thống
+      ansible.builtin.debug:
+        msg: "-> [HANDLER 1] Đã nhận sự kiện khởi chạy hệ thống."
+      listen: "Event: Khoi chay he thong"
+
+    - name: Handler 2 - Ghi log sự kiện
+      ansible.builtin.debug:
+        msg: "-> [HANDLER 2] Ghi chép lịch sử khởi chạy thành công."
+      listen: "Event: Khoi chay he thong"
+...
