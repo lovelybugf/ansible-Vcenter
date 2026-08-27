@@ -23,6 +23,7 @@
 - name: "Playbook Triển khai Web Server thực tế - Demo Chương 6"
   hosts: web_servers, db_servers
   gather_facts: true          # Thu thập fact để lấy tên hệ điều hành hiển thị lên trang chủ index.html
+  become: true                # LEO THANG QUYỀN: Bật become ở cấp độ Play để các tác vụ sửa đổi hệ thống có quyền root
 
   # --------------------------------------------------------------------------
   # A. PRE-TASKS: Điều phối gỡ Server khỏi Load Balancer (HAProxy) trước khi triển khai
