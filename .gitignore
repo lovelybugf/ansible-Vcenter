@@ -18,3 +18,5 @@ collections/ansible_collections/
 .vscode/
 env.sh
 AU374/
+fact_cache/
+
