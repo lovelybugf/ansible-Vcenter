@@ -1,0 +1,118 @@
+---
+# ==============================================================================
+# DEMO TỔNG HỢP KIẾN THỨC CHƯƠNG 7 (FILTERS, LOOKUPS & ADVANCED LOOPS)
+# Triển khai và chạy thử nghiệm trên máy Control Node (localhost/db-server)
+# Lệnh chạy: ansible-playbook -i inventory/demo_hosts.yml demo_chapter7.yml
+# ==============================================================================
+
+- name: "Playbook Demo Chương 7 - Biến đổi dữ liệu & Tương tác IP"
+  hosts: db_servers
+  gather_facts: false
+  become: true                # Cần quyền root để cài thư viện hệ thống nếu thiếu
+
+  vars:
+    # Danh sách IP test để minh họa bộ lọc ansible.utils.ipaddr
+    list_ips:
+      - "192.168.2.1"
+      - "10.0.0.128/25"
+      - "172.24.10.0/255.255.255.0"
+      - "ff02::1"
+      - "::1"
+      - "2001::1/64"
+      - "www.google.com"      # Bản ghi không phải IP (sẽ bị bộ lọc loại bỏ)
+
+    subnet_to_calculate: "192.168.1.0/24"
+
+    # Danh sách các subnet nhỏ để gom nhóm tối giản
+    subnets_to_merge:
+      - "10.0.1.0/24"
+      - "10.0.2.0/24"
+      - "10.0.3.0/24"
+
+    # Dữ liệu mẫu phục vụ vòng lặp nâng cao (Subelements Loop)
+    users_list:
+      - name: "ducnam"
+        ssh_keys:
+          - "ssh-rsa AAAAB3NzaC1yc2E...key1"
+          - "ssh-rsa AAAAB3NzaC1yc2E...key2"
+      - name: "student"
+        ssh_keys:
+          - "ssh-rsa AAAAB3NzaC1yc2E...key3"
+
+  tasks:
+    # --------------------------------------------------------------------------
+    # 0. CÀI ĐẶT THƯ VIỆN BẮT BUỘC CHO IPADDR FILTER
+    # --------------------------------------------------------------------------
+    - name: "[PRE-REQ] Đảm bảo thư viện python3-netaddr đã được cài đặt trên Control Node"
+      ansible.builtin.package:
+        name: python3-netaddr
+        state: present
+      delegate_to: localhost
+      run_once: true
+      become: true
+
+    # --------------------------------------------------------------------------
+    # 1. MINH HỌA JINJA2 FILTERS (BIẾN ĐỔI DỮ LIỆU)
+    # --------------------------------------------------------------------------
+    - name: "MINH HỌA 1: Các bộ lọc Jinja2 Filters cơ bản"
+      ansible.builtin.debug:
+        msg:
+          - "1. Ep kieu so nguyen: {{ '123' | int + 7 }}"
+          - "2. Dinh dang chu hoa: {{ 'ansible automation' | upper }}"
+          - "3. Gan gia tri mac dinh: {{ undefined_variable | default('Bien nay chua duoc khai bao') }}"
+          - "4. Loc gia tri doc nhat: {{ [1, 2, 2, 3, 3, 3] | unique }}"
+
+    # --------------------------------------------------------------------------
+    # 2. MINH HỌA LOOKUP PLUG-INS (TRUY XUẤT DỮ LIỆU NGOÀI)
+    # --------------------------------------------------------------------------
+    - name: "MINH HỌA 2: Truy xuất dữ liệu hệ thống bằng Lookup Plug-ins"
+      ansible.builtin.debug:
+        msg:
+          - "1. Doc bien moi truong PATH: {{ lookup('env', 'PATH') | truncate(60) }}"
+          - "2. Doc file noi bo he thong (/etc/hostname): {{ lookup('file', '/etc/hostname') | trim }}"
+
+    # --------------------------------------------------------------------------
+    # 3. MINH HỌA VÒNG LẶP NÂNG CAO (ADVANCED LOOPS)
+    # --------------------------------------------------------------------------
+    - name: "MINH HỌA 3.1: Vòng lặp chờ điều kiện (Loop Until)"
+      ansible.builtin.shell: |
+        curl -s -o /dev/null -w "%{http_code}" http://localhost:8080
+      register: curl_check
+      until: curl_check.stdout == "200"
+      retries: 5
+      delay: 2
+      become: false
+      ignore_errors: true     # Bỏ qua nếu dịch vụ Apache chưa chạy để tránh ngắt Playbook
+
+    - name: "MINH HỌA 3.2: Vòng lặp lồng nhau (Subelements Loop)"
+      ansible.builtin.debug:
+        msg: "User {{ item.0.name }} dang duoc cap khoa SSH: {{ item.1 }}"
+      loop: "{{ users_list | subelements('ssh_keys') }}"
+
+    # --------------------------------------------------------------------------
+    # 4. MINH HỌA BỘ LỌC ĐỊA CHỈ MẠNG (ANSIBLE.UTILS.IPADDR)
+    # --------------------------------------------------------------------------
+    - name: "MINH HỌA 4.1: Xác thực và phân loại IP từ danh sách hỗn hợp"
+      ansible.builtin.debug:
+        msg:
+          - "1. Loc cac IP hop le: {{ list_ips | ansible.utils.ipaddr }}"
+          - "2. Loc IP thuoc dai rieng tu (Private RFC 1918): {{ list_ips | ansible.utils.ipaddr('private') }}"
+          - "3. Loc IPv6 va boc ngoac vuong (ipwrap): {{ list_ips | ansible.utils.ipaddr('ipv6') | ansible.utils.ipwrap }}"
+
+    - name: "MINH HỌA 4.2: Phân tách chi tiết cấu trúc IP 192.168.2.1/24"
+      ansible.builtin.debug:
+        msg:
+          - "1. IP Address: {{ '192.168.2.1/24' | ansible.utils.ipaddr('address') }}"
+          - "2. Subnet Mask: {{ '192.168.2.1/24' | ansible.utils.ipaddr('netmask') }}"
+          - "3. CIDR Prefix: {{ '192.168.2.1/24' | ansible.utils.ipaddr('prefix') }}"
+          - "4. Network Address: {{ '192.168.2.1/24' | ansible.utils.ipaddr('network') }}"
+          - "5. Broadcast Address: {{ '192.168.2.1/24' | ansible.utils.ipaddr('broadcast') }}"
+          - "6. PTR Record (DNS nguoc): {{ '192.168.2.1/24' | ansible.utils.ipaddr('revdns') }}"
+
+    - name: "MINH HỌA 4.3: Tính toán mạng nâng cao"
+      ansible.builtin.debug:
+        msg:
+          - "1. IP dung thu 5 cua mang 192.168.1.0/24: {{ subnet_to_calculate | ansible.utils.ipaddr(5) }}"
+          - "2. Dai IP kha dung cho hosts: {{ subnet_to_calculate | ansible.utils.ipaddr('range_usable') }}"
+          - "3. Gom nhom subnets toi gian (CIDR Merge): {{ subnets_to_merge | ansible.utils.cidr_merge }}"
+...

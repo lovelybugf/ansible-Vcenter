@@ -266,26 +266,39 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 ---
 
 ## Ⅹ. BIẾN ĐỔI DỮ LIỆU VỚI FILTERS VÀ PLUG-INS (CHƯƠNG 7)
-### Xử lý logic và biến đổi dữ liệu phức tạp trong Playbook
-Ansible cung cấp các công cụ mạnh mẽ để thao tác và biến đổi dữ liệu một cách linh hoạt:
 
-#### 1. Xử lý biến bằng Jinja2 Filters
-*   **Filter cơ bản:** Ép kiểu dữ liệu (`int`), chuyển kiểu chuỗi (`lower`), gán giá trị mặc định khi biến trống (`default`).
-*   **Filter danh sách/từ điển:** Loại bỏ trùng lặp (`unique`), lọc đối tượng thỏa mãn điều kiện thuộc tính (`selectattr`), chuyển đổi cấu trúc dễ lặp qua (`dict2items`).
+### Xử lý logic và biến đổi dữ liệu phức tạp trong Playbook
+
+Ansible cung cấp các công cụ mạnh mẽ để thao tác, biến đổi và tính toán dữ liệu một cách linh hoạt:
+
+#### 1. Biến đổi dữ liệu qua Jinja2 Filters
+*   **Bộ lọc cơ bản:** Định dạng chuỗi (`lower`, `upper`), ép kiểu dữ liệu (`int`), gán giá trị mặc định khi biến trống (`default`).
+*   **Bộ lọc danh sách/từ điển:** Loại bỏ trùng lặp (`unique`), lọc đối tượng thỏa mãn điều kiện thuộc tính (`selectattr`), chuyển đổi dictionary sang list (`dict2items`).
 
 #### 2. Truy xuất dữ liệu ngoài bằng Lookup Plug-ins
-*   Sử dụng cú pháp `lookup()` để đọc dữ liệu động trong quá trình thực thi:
-    *   `lookup('env', 'VAR')`: Đọc biến môi trường.
-    *   `lookup('file', '/path')`: Đọc nội dung tệp tin.
-    *   `lookup('url', 'https://api')`: Truy xuất dữ liệu động từ API ngoại vi.
+*   Sử dụng cú pháp `lookup()` để đọc dữ liệu động tại thời điểm chạy:
+    *   `lookup('env', 'PATH')`: Đọc biến môi trường trên máy Control Node.
+    *   `lookup('file', '/path/to/file')`: Đọc nội dung tệp tin cấu hình local.
+    *   `lookup('url', 'https://api.example.com')`: Truy xuất dữ liệu động từ API ngoại vi.
 
-#### 3. Vòng lặp nâng cao và bộ lọc địa chỉ mạng
-*   Sử dụng vòng lặp chờ điều kiện bằng `until` kết hợp `retries` và `delay` (chờ dịch vụ lên thành công).
-*   Lặp danh sách lồng nhau bằng bộ lọc `subelements`.
-*   Xác thực và phân tách thông tin địa chỉ mạng (Subnet, IP, Netmask) bằng filter chuyên dụng `ipaddr`.
+#### 3. Vòng lặp nâng cao (Advanced Loops)
+*   **Vòng lặp chờ điều kiện (`until`):** Chạy lặp lại task cho tới khi thỏa mãn điều kiện (kết hợp `retries` và `delay`). Thích hợp để chờ dịch vụ hoặc cổng mạng khởi động thành công.
+*   **Vòng lặp lồng nhau (`subelements`):** Duyệt qua cấu trúc dữ liệu phức tạp (như danh sách người dùng đi kèm với danh sách SSH keys tương ứng của từng người).
+
+#### 4. Sử dụng Bộ lọc Địa chỉ Mạng (ansible.utils.ipaddr)
+*   Yêu cầu thư viện Python `netaddr` trên máy chạy.
+*   **Xác thực và phân loại:**
+    *   `ip | ansible.utils.ipaddr`: Trả về IP nếu hợp lệ, ngược lại trả về `false`.
+    *   `list_ips | ansible.utils.ipaddr('private')`: Lọc riêng các IP thuộc dải riêng tư (RFC 1918).
+    *   `list_ips | ansible.utils.ipwrap`: Tự động bọc dấu ngoặc vuông `[...]` quanh IPv6 (phục vụ viết file config).
+*   **Phân tách thông tin IP:**
+    *   Tách chi tiết: `address` (IP), `netmask` (Subnet mask), `prefix` (CIDR), `network` (Mạng), `broadcast` (Quảng bá), `revdns` (Phân giải ngược PTR).
+*   **Tính toán dải mạng:**
+    *   Lấy IP thứ N trong mạng: `network | ansible.utils.ipaddr(N)`.
+    *   Dải IP khả dụng: `network | ansible.utils.ipaddr('range_usable')`.
+    *   Gộp mạng tối giản: `list_subnets | ansible.utils.cidr_merge`.
 
 ---
-
 ## Ⅺ. ĐIỀU PHỐI CẬP NHẬT CUỐN CHIẾU (CHƯƠNG 8)
 ### Chiến lược nâng cấp hệ thống giảm thiểu tối đa thời gian gián đoạn (Zero Downtime)
 
