@@ -20,22 +20,10 @@
 #    ansible-playbook -i inventory/demo_hosts.yml demo_chapter6.yml --tags untagged
 # ==============================================================================
 
-- name: "Play 1 - Tự động cấu hình Sudo không mật khẩu (NOPASSWD) cho ducnam"
+- name: "Playbook Triển khai Web Server thực tế - Demo Chương 6"
   hosts: web_servers, db_servers
-  gather_facts: false
-  become: false
-  tags: always
-  tasks:
-    - name: "Ghi cấu hình NOPASSWD vào /etc/sudoers.d/ducnam"
-      ansible.builtin.shell: |
-        echo "1" | sudo -S sh -c "echo 'ducnam ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ducnam && chmod 0440 /etc/sudoers.d/ducnam"
-      changed_when: true
-      ignore_errors: true
-
-- name: "Play 2 - Playbook Triển khai Web Server thực tế - Demo Chương 6"
-  hosts: web_servers, db_servers
-  gather_facts: true          # Thu thập fact để lấy tên hệ điều hành hiển thị lên trang chủ index.html
-  become: true                # LEO THANG QUYỀN: Bật become ở cấp độ Play để các tác vụ sửa đổi hệ thống có quyền root
+  gather_facts: true          # Thu thập fact ở quyền thường (become: false) để tránh timeout prompt
+  become: false               # Tắt become ở cấp Play để Fact Gathering và các local task chạy thường
 
   # --------------------------------------------------------------------------
   # A. PRE-TASKS: Điều phối gỡ Server khỏi Load Balancer (HAProxy) trước khi triển khai
@@ -45,24 +33,23 @@
       ansible.builtin.debug:
         msg: "Bắt đầu tiến trình bảo trì và cập nhật cho máy chủ {{ inventory_hostname }}..."
       delegate_to: localhost
-      become: false           # BEST PRACTICE: Bắt buộc tắt become trên localhost để tránh lỗi sudo cục bộ
       tags: always
 
     - name: "[PRE-TASK 2] Gỡ máy chủ {{ inventory_hostname }} khỏi active rotation của HAProxy"
       ansible.builtin.debug:
         msg: "MOCK API CALL: Đã chuyển máy chủ {{ inventory_hostname }} ({{ ansible_host }}) sang trạng thái MAINTENANCE trên HAProxy (cổng 80)."
       delegate_to: localhost
-      become: false
       tags: always            # Phải chạy để đảm bảo an toàn cho hệ thống (luôn gỡ trước khi ngắt service)
 
   # --------------------------------------------------------------------------
-  # B. TASKS CHÍNH: Cài đặt, Cấu hình và Bật dịch vụ thực tế
+  # B. TASKS CHÍNH: Cài đặt, Cấu hình và Bật dịch vụ thực tế (Dùng become: true ở từng task)
   # --------------------------------------------------------------------------
   tasks:
     - name: "[TASK 1 - SETUP] Cài đặt gói Apache Web Server (httpd)"
       ansible.builtin.package:
         name: httpd
         state: present
+      become: true            # Chỉ leo thang đặc quyền ở các tác vụ thay đổi hệ thống
       tags: setup
 
     - name: "[TASK 1.5 - PORT] Đổi cổng Apache sang 8080 tránh xung đột cổng 80 với HAProxy"
@@ -70,6 +57,7 @@
         path: /etc/httpd/conf/httpd.conf
         regexp: '^Listen 80$'
         line: 'Listen 8080'
+      become: true            # Cần quyền root để sửa file cấu hình trong /etc/
       tags:
         - setup
         - config
@@ -79,6 +67,7 @@
         src: templates/index.html.j2
         dest: /var/www/html/index.html
         mode: '0644'
+      become: true            # Cần quyền root để ghi tệp vào thư mục /var/www/html
       tags: config
 
     - name: "[TASK 3 - SETUP] Khởi động và kích hoạt dịch vụ Apache (httpd)"
@@ -86,6 +75,7 @@
         name: httpd
         state: started
         enabled: true
+      become: true            # Cần quyền root để khởi chạy dịch vụ qua systemd
       notify: Restart Apache
       tags: setup
 
@@ -97,6 +87,7 @@
       ansible.builtin.file:
         path: /var/www/html/index.html
         state: absent
+      become: true            # Cần quyền root để xóa file
       tags:
         - never               # Chỉ chạy khi chỉ định --tags db_reset
         - db_reset
@@ -115,14 +106,12 @@
         status_code: 200
         timeout: 5
       delegate_to: localhost  # Đứng từ Control Node gọi HTTP curl kiểm tra
-      become: false           # Không cần sudo trên Control Node
       tags: always            # Luôn luôn chạy để xác thực chất lượng trước khi mở lại cho người dùng
 
     - name: "[POST-TASK 2] Gắn máy chủ {{ inventory_hostname }} trở lại active rotation của HAProxy"
       ansible.builtin.debug:
         msg: "MOCK API CALL: Cấu hình HAProxy mở lại traffic và hướng người dùng đến {{ inventory_hostname }} ({{ ansible_host }}:8080)."
       delegate_to: localhost
-      become: false
       tags: always
 
     - name: "[POST-TASK 3] Kích hoạt 2 handler thông báo và ghi nhận log"
@@ -146,6 +135,7 @@
       ansible.builtin.service:
         name: httpd
         state: restarted
+      become: true            # Cần quyền root để restart dịch vụ qua systemd
 
     - name: "Gửi tin nhắn Slack"
       ansible.builtin.debug:
@@ -154,4 +144,3 @@
     - name: "Ghi log lịch sử"
       ansible.builtin.debug:
         msg: "-> [HANDLER LOG] Đã ghi nhận nhật ký cập nhật cho {{ inventory_hostname }} vào cơ sở dữ liệu."
-
