@@ -73,10 +73,10 @@
         msg: "Ghi nhận: Tiến trình cấu hình đã đi qua các task chính trên {{ inventory_hostname }}."
 
   # --------------------------------------------------------------------------
-  # C. POST-TASKS: Kiểm tra, xác thực dịch vụ sau khi deploy xong
+  # C. POST-TASKS: Kiểm tra, xác thực dịch vụ và kích hoạt handlers kết thúc
   # --------------------------------------------------------------------------
   post_tasks:
-    - name: "[POST-TASK] Kiểm tra phản hồi HTTP thực tế từ máy Control Node"
+    - name: "[POST-TASK 1] Kiểm tra phản hồi HTTP thực tế từ máy Control Node"
       ansible.builtin.uri:
         url: "http://{{ ansible_host }}"
         status_code: 200
@@ -85,12 +85,33 @@
       become: false           # Không cần sudo trên Control Node
       tags: always            # Tag 'always' đảm bảo bước xác thực này luôn được chạy cuối cùng
 
+    - name: "[POST-TASK 2] Kích hoạt 2 handler thông báo và ghi nhận log"
+      ansible.builtin.debug:
+        msg: "Hoàn tất kiểm tra HTTP. Bắt đầu gửi thông báo Slack và ghi nhận nhật ký deploy..."
+      notify:
+        - "Gửi tin nhắn Slack"
+        - "Ghi log lịch sử"
+      changed_when: true      # Bắt buộc thay đổi trạng thái để kích hoạt notify
+      tags: always
+
+    - name: "[POST-TASK 3] Ép chạy nóng các Handler của post-tasks ngay lập tức"
+      ansible.builtin.meta: flush_handlers  # Chạy ngay 2 handler trên trước khi hoàn thành Playbook
+      tags: always
+
   # --------------------------------------------------------------------------
-  # D. HANDLERS: Xử lý restart dịch vụ
+  # D. HANDLERS: Xử lý restart dịch vụ và thông báo
   # --------------------------------------------------------------------------
   handlers:
     - name: Restart Apache
       ansible.builtin.service:
         name: httpd
         state: restarted
+
+    - name: "Gửi tin nhắn Slack"
+      ansible.builtin.debug:
+        msg: "-> [HANDLER SLACK] Gửi thông báo: Hệ thống {{ inventory_hostname }} đã cập nhật thành công!"
+
+    - name: "Ghi log lịch sử"
+      ansible.builtin.debug:
+        msg: "-> [HANDLER LOG] Đã ghi nhận nhật ký cập nhật cho {{ inventory_hostname }} vào cơ sở dữ liệu."
 ...
