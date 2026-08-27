@@ -1,5 +1,5 @@
 ---
-- name: Playbook Demo Tổng Hợp Kiến Thức Chương 6 (Managing Task Execution)
+- name: Playbook Demo Tổng Hợp Kiến Thức Chương 6
   hosts: k8s
   gather_facts: false       # TỐI ƯU HIỆU NĂNG: Tắt tự động thu thập fact nếu không dùng
   order: sorted             # THỨ TỰ HOST: Sắp xếp các host chạy theo thứ tự A-Z

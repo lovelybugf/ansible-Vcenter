@@ -1,4 +1,4 @@
-# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
+﻿# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
 
 ---
 
@@ -259,10 +259,6 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
     *   **Forks & Pipelining:**
         *   *Tăng Forks:* Cấu hình `forks = 50` hoặc `100` trong `ansible.cfg` để chạy song song nhiều host hơn.
         *   *Bật Pipelining:* Đặt `pipelining = True` trong `ansible.cfg` để giảm kết nối SSH (yêu cầu tắt `requiretty` ở host đích).
-    *   **Viết code hiệu quả:**
-        *   *DNF/Apt:* Khai báo danh sách package trực tiếp `name: [pkg1, pkg2]` thay vì dùng `loop` (chạy trong 1 transaction).
-        *   *Copy lớn:* Dùng `synchronize` (rsync) thay cho `copy`.
-        *   *Cấu hình file:* Dùng `template` thay vì chạy `loop` qua `lineinfile`.
     *   **Đo lường thời gian (Profiling):**
         *   Bật callback plug-in trong `ansible.cfg`:
             `callbacks_enabled = ansible.posix.timer, ansible.posix.profile_tasks, ansible.posix.profile_roles`
@@ -271,7 +267,6 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
 
 ## Ⅹ. BIẾN ĐỔI DỮ LIỆU VỚI FILTERS VÀ PLUG-INS (CHƯƠNG 7)
 ### Xử lý logic và biến đổi dữ liệu phức tạp trong Playbook
-
 Ansible cung cấp các công cụ mạnh mẽ để thao tác và biến đổi dữ liệu một cách linh hoạt:
 
 #### 1. Xử lý biến bằng Jinja2 Filters
