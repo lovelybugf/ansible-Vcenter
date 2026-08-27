@@ -7,14 +7,14 @@ all:
       ansible_password: "1"
       ansible_become: true
       ansible_become_method: sudo
-      ansible_become_pass: "1"
+      ansible_become_password: "1"
     web-server:
       ansible_host: 172.25.250.20
       ansible_user: ducnam
       ansible_password: "1"
       ansible_become: true
       ansible_become_method: sudo
-      ansible_become_pass: "1"
+      ansible_become_password: "1"
   children:
     db_servers:
       hosts:

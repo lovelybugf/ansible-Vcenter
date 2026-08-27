@@ -45,6 +45,15 @@
         state: present
       tags: setup             # Gán tag 'setup'
 
+    - name: "[TASK 1.5 - PORT] Đổi cổng Apache sang 8080 tránh xung đột cổng 80 với HAProxy"
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^Listen 80$'
+        line: 'Listen 8080'
+      tags:
+        - setup
+        - config
+
     - name: "[TASK 2 - CONFIG] Cấu hình trang chủ index.html từ Template"
       ansible.builtin.template:
         src: templates/index.html.j2
@@ -78,7 +87,7 @@
   post_tasks:
     - name: "[POST-TASK 1] Kiểm tra phản hồi HTTP thực tế từ máy Control Node"
       ansible.builtin.uri:
-        url: "http://{{ ansible_host }}"
+        url: "http://{{ ansible_host }}:8080"
         status_code: 200
         timeout: 5
       delegate_to: localhost  # Đứng từ Control Node gọi HTTP curl kiểm tra
