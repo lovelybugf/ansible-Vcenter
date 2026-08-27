@@ -41,17 +41,6 @@
 
   tasks:
     # --------------------------------------------------------------------------
-    # 0. CÀI ĐẶT THƯ VIỆN BẮT BUỘC CHO IPADDR FILTER
-    # --------------------------------------------------------------------------
-    - name: "[PRE-REQ] Đảm bảo thư viện python3-netaddr đã được cài đặt trên Control Node"
-      ansible.builtin.package:
-        name: python3-netaddr
-        state: present
-      delegate_to: localhost
-      run_once: true
-      become: true
-
-    # --------------------------------------------------------------------------
     # 1. MINH HỌA JINJA2 FILTERS (BIẾN ĐỔI DỮ LIỆU)
     # --------------------------------------------------------------------------
     - name: "MINH HỌA 1: Các bộ lọc Jinja2 Filters cơ bản"
