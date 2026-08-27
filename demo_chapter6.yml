@@ -93,7 +93,7 @@
     - name: "[TASK 3 - SETUP] Khởi động và kích hoạt dịch vụ Apache"
       ansible.builtin.service:
         name: "{{ web_service }}"
-        state: started
+        state: restarted
         enabled: true
       become: true            # Cần quyền root để khởi chạy dịch vụ qua systemd
       notify: Restart Apache
