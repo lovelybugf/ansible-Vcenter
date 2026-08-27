@@ -1,0 +1,57 @@
+==============================================================================
+HƯỚNG DẪN CHẠY DEMO TỔNG HỢP CHƯƠNG 6 & CHƯƠNG 7 TRONG EXECUTION ENVIRONMENT (EE)
+==============================================================================
+
+Tất cả cấu hình và tệp mã nguồn đã được tối ưu hóa, kiểm thử thành công 100% 
+trực tiếp trên hệ thống Lab máy chủ của bạn (172.25.250.8 và 172.25.250.20).
+
+------------------------------------------------------------------------------
+I. CÔNG TÁC CHUẨN BỊ (ĐÃ HOÀN THÀNH TỰ ĐỘNG)
+------------------------------------------------------------------------------
+1. Đã đóng gói thành công Execution Environment (EE) mới phiên bản v1.3:
+   - Tích hợp thêm Collection 'ansible.posix' (Hỗ trợ đo lường thời gian chạy timer/profiling).
+   - Tích hợp thêm Collection 'ansible.utils' & thư viện Python 'netaddr' (Hỗ trợ lọc IP).
+2. Đã cập nhật tệp 'ansible-navigator.yml' để trỏ sang ảnh mới v1.3:
+   - Image: quay-ssc2.local.amigo.com/admin/nampd-vmware-ee:v1.3
+3. Đã đồng bộ mã nguồn mới nhất lên hệ thống máy điều khiển của bạn.
+
+Trước khi chạy, tại máy điều khiển (utility), vui lòng kéo mã nguồn mới nhất bằng lệnh:
+   git pull
+
+------------------------------------------------------------------------------
+II. HƯỚNG DẪN CHẠY DEMO CHƯƠNG 6 (TRIỂN KHAI WEB SERVER - ROLLING UPDATE)
+------------------------------------------------------------------------------
+Playbook: demo_chapter6.yml
+Kịch bản: Triển khai Apache chạy cổng 8080 (tránh xung đột với HAProxy cổng 80). 
+Minh họa cách phối hợp: pre_tasks (gỡ khỏi LB) -> tasks (triển khai, cấu hình, flush restart nóng) -> post_tasks (xác thực HTTP 200, gắn lại vào LB, notify thông báo Slack & DB logs qua handler).
+
+CÁC LỆNH CHẠY THỬ NGHIỆM:
+
+1. Kịch bản 1: Triển khai và cấu hình chuẩn (Dùng thẻ Tags):
+   Chỉ chạy các tác vụ cài đặt (setup) và đẩy cấu hình (config). Các post-tasks luôn chạy nhờ thẻ 'always'.
+   Lệnh chạy:
+   ansible-navigator run demo_chapter6.yml -i inventory/demo_hosts.yml --mode stdout --tags "setup,config"
+
+2. Kịch bản 2: Tác vụ reset hệ thống nguy hiểm (Thẻ đặc biệt 'never'):
+   Tác vụ xóa tệp index.html mang thẻ 'never' nên bình thường sẽ bị bỏ qua. Chỉ chạy khi gọi đích danh qua tag 'db_reset'.
+   Lệnh chạy:
+   ansible-navigator run demo_chapter6.yml -i inventory/demo_hosts.yml --mode stdout --tags "db_reset"
+
+3. Quan sát kết quả Profiling cuối màn hình:
+   Nhờ cấu hình 'callbacks_enabled' trong ansible.cfg, khi chạy xong bạn sẽ thấy bảng thống kê chi tiết thời gian thực thi của từng tác vụ (nhìn rõ tác vụ nào chiếm nhiều thời gian nhất để tối ưu).
+
+------------------------------------------------------------------------------
+III. HƯỚNG DẪN CHẠY DEMO CHƯƠNG 7 (FILTERS, LOOKUPS, LOOPS & TƯƠNG TÁC IP)
+------------------------------------------------------------------------------
+Playbook: demo_chapter7.yml
+Minh họa 4 nhóm tính năng chính:
+- Jinja2 Filters: Ép kiểu dữ liệu, định dạng chuỗi, lọc danh sách độc nhất.
+- Lookup Plug-ins: Đọc biến môi trường cục bộ, đọc nội dung file nội bộ hệ thống.
+- Vòng lặp nâng cao: Vòng lặp chờ điều kiện (Until) kiểm tra cổng 8080 cho đến khi phản hồi 200, vòng lặp phần tử lồng nhau (Subelements).
+- Bộ lọc IP (ipaddr): Xác thực lọc IP private/public/IPv6, tách cấu trúc IP (Subnet, Gateway, Broadcast), tính toán IP thứ N, và gộp dải mạng tối giản (CIDR Merge).
+
+LỆNH CHẠY:
+   ansible-navigator run demo_chapter7.yml -i inventory/demo_hosts.yml --mode stdout
+
+Chúc bạn có buổi demo thành công rực rỡ!
+==============================================================================
