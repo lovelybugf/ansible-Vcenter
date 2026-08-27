@@ -25,15 +25,22 @@
   gather_facts: true          # Thu thập fact để lấy tên hệ điều hành hiển thị lên trang chủ index.html
 
   # --------------------------------------------------------------------------
-  # A. PRE-TASKS: Chuẩn bị kiểm tra ban đầu trước khi chạy tasks chính
+  # A. PRE-TASKS: Điều phối gỡ Server khỏi Load Balancer (HAProxy) trước khi triển khai
   # --------------------------------------------------------------------------
   pre_tasks:
-    - name: "[PRE-TASK] Ghi thông báo khởi động tiến trình lên Control Node"
+    - name: "[PRE-TASK 1] Ghi thông báo khởi động tiến trình lên Control Node"
       ansible.builtin.debug:
-        msg: "Bắt đầu triển khai dịch vụ Apache Web Server..."
+        msg: "Bắt đầu tiến trình bảo trì và cập nhật cho máy chủ {{ inventory_hostname }}..."
       delegate_to: localhost
       become: false           # BEST PRACTICE: Bắt buộc tắt become trên localhost để tránh lỗi sudo cục bộ
-      tags: always            # Luôn luôn chạy tác vụ này
+      tags: always
+
+    - name: "[PRE-TASK 2] Gỡ máy chủ {{ inventory_hostname }} khỏi active rotation của HAProxy"
+      ansible.builtin.debug:
+        msg: "MOCK API CALL: Đã chuyển máy chủ {{ inventory_hostname }} ({{ ansible_host }}) sang trạng thái MAINTENANCE trên HAProxy (cổng 80)."
+      delegate_to: localhost
+      become: false
+      tags: always            # Phải chạy để đảm bảo an toàn cho hệ thống (luôn gỡ trước khi ngắt service)
 
   # --------------------------------------------------------------------------
   # B. TASKS CHÍNH: Cài đặt, Cấu hình và Bật dịch vụ thực tế
@@ -43,7 +50,7 @@
       ansible.builtin.package:
         name: httpd
         state: present
-      tags: setup             # Gán tag 'setup'
+      tags: setup
 
     - name: "[TASK 1.5 - PORT] Đổi cổng Apache sang 8080 tránh xung đột cổng 80 với HAProxy"
       ansible.builtin.lineinfile:
@@ -59,7 +66,7 @@
         src: templates/index.html.j2
         dest: /var/www/html/index.html
         mode: '0644'
-      tags: config            # Gán tag 'config'
+      tags: config
 
     - name: "[TASK 3 - SETUP] Khởi động và kích hoạt dịch vụ Apache (httpd)"
       ansible.builtin.service:
@@ -67,43 +74,54 @@
         state: started
         enabled: true
       notify: Restart Apache
-      tags: setup             # Gán tag 'setup'
+      tags: setup
+
+    - name: "[TASK 3.5 - FLUSH] ÉP RESTART APACHE LẬP TỨC (Flush Handlers)"
+      ansible.builtin.meta: flush_handlers  # Ép chạy Restart Apache ngay để kiểm tra ở bước post_tasks tiếp theo
+      tags: always
 
     - name: "[TASK 4 - RESET] Xóa bỏ trang chủ index.html (Tác vụ Nguy hiểm)"
       ansible.builtin.file:
         path: /var/www/html/index.html
         state: absent
       tags:
-        - never               # Tag đặc biệt: ngăn không cho tự động chạy khi chạy bình thường
-        - db_reset            # Chỉ chạy khi chỉ định --tags db_reset
+        - never               # Chỉ chạy khi chỉ định --tags db_reset
+        - db_reset
 
     - name: "[TASK 5 - UNTAGGED] Tác vụ ghi nhận log local (Không gắn thẻ)"
       ansible.builtin.debug:
         msg: "Ghi nhận: Tiến trình cấu hình đã đi qua các task chính trên {{ inventory_hostname }}."
 
   # --------------------------------------------------------------------------
-  # C. POST-TASKS: Kiểm tra, xác thực dịch vụ và kích hoạt handlers kết thúc
+  # C. POST-TASKS: Kiểm tra cục bộ và gắn lại Server vào Load Balancer
   # --------------------------------------------------------------------------
   post_tasks:
-    - name: "[POST-TASK 1] Kiểm tra phản hồi HTTP thực tế từ máy Control Node"
+    - name: "[POST-TASK 1] Kiểm tra phản hồi HTTP thực tế cổng 8080 từ máy Control Node (Health Check)"
       ansible.builtin.uri:
         url: "http://{{ ansible_host }}:8080"
         status_code: 200
         timeout: 5
       delegate_to: localhost  # Đứng từ Control Node gọi HTTP curl kiểm tra
       become: false           # Không cần sudo trên Control Node
-      tags: always            # Tag 'always' đảm bảo bước xác thực này luôn được chạy cuối cùng
+      tags: always            # Luôn luôn chạy để xác thực chất lượng trước khi mở lại cho người dùng
 
-    - name: "[POST-TASK 2] Kích hoạt 2 handler thông báo và ghi nhận log"
+    - name: "[POST-TASK 2] Gắn máy chủ {{ inventory_hostname }} trở lại active rotation của HAProxy"
       ansible.builtin.debug:
-        msg: "Hoàn tất kiểm tra HTTP. Bắt đầu gửi thông báo Slack và ghi nhận nhật ký deploy..."
+        msg: "MOCK API CALL: Cấu hình HAProxy mở lại traffic và hướng người dùng đến {{ inventory_hostname }} ({{ ansible_host }}:8080)."
+      delegate_to: localhost
+      become: false
+      tags: always
+
+    - name: "[POST-TASK 3] Kích hoạt 2 handler thông báo và ghi nhận log"
+      ansible.builtin.debug:
+        msg: "Hoàn tất triển khai. Bắt đầu gửi thông báo Slack và ghi nhận nhật ký deploy..."
       notify:
         - "Gửi tin nhắn Slack"
         - "Ghi log lịch sử"
       changed_when: true      # Bắt buộc thay đổi trạng thái để kích hoạt notify
       tags: always
 
-    - name: "[POST-TASK 3] Ép chạy nóng các Handler của post-tasks ngay lập tức"
+    - name: "[POST-TASK 4] Ép chạy nóng các Handler thông báo ngay lập tức"
       ansible.builtin.meta: flush_handlers  # Chạy ngay 2 handler trên trước khi hoàn thành Playbook
       tags: always
 
@@ -123,4 +141,4 @@
     - name: "Ghi log lịch sử"
       ansible.builtin.debug:
         msg: "-> [HANDLER LOG] Đã ghi nhận nhật ký cập nhật cho {{ inventory_hostname }} vào cơ sở dữ liệu."
-...
+
