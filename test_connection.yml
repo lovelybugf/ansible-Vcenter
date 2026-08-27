@@ -1,0 +1,34 @@
+---
+- name: Test Connection and Sudo on web-server
+  hosts: web_servers
+  gather_facts: false
+
+  tasks:
+    - name: "1. Ping test (No become)"
+      ansible.builtin.ping:
+      become: false
+
+    - name: "2. Check current user (No become)"
+      ansible.builtin.command: whoami
+      become: false
+      register: whoami_res
+
+    - name: "Print current user"
+      ansible.builtin.debug:
+        var: whoami_res.stdout
+
+    - name: "3. Test manual sudo command with password 1"
+      ansible.builtin.shell: |
+        echo "1" | sudo -S -v
+      become: false
+      register: sudo_res
+      ignore_errors: true
+
+    - name: "Print sudo test stdout"
+      ansible.builtin.debug:
+        var: sudo_res.stdout
+
+    - name: "Print sudo test stderr"
+      ansible.builtin.debug:
+        var: sudo_res.stderr
+...
