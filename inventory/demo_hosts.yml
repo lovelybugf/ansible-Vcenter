@@ -1,19 +1,25 @@
 ---
 all:
   hosts:
-    vm-db-01:
-      ansible_host: 192.168.50.42
-      ansible_user: student
+    db-server:
+      ansible_host: 172.25.250.8
+      ansible_user: ducnam
       ansible_password: "1"
-    vm-web-01:
-      ansible_host: 192.168.50.43
-      ansible_user: student
+      ansible_become: true
+      ansible_become_method: sudo
+      ansible_become_pass: "1"
+    web-server:
+      ansible_host: 172.25.250.20
+      ansible_user: ducnam
       ansible_password: "1"
+      ansible_become: true
+      ansible_become_method: sudo
+      ansible_become_pass: "1"
   children:
     db_servers:
       hosts:
-        vm-db-01:
+        db-server:
     web_servers:
       hosts:
-        vm-web-01:
+        web-server:
 ...
