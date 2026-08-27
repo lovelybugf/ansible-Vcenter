@@ -1,4 +1,4 @@
-﻿# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
+# BÁO CÁO THUYẾT TRÌNH KHÓA AU374
 
 ---
 
@@ -263,7 +263,6 @@ Sự khác biệt cốt lõi nằm ở **thời điểm xử lý** (Static vs Dy
         *   *DNF/Apt:* Khai báo danh sách package trực tiếp `name: [pkg1, pkg2]` thay vì dùng `loop` (chạy trong 1 transaction).
         *   *Copy lớn:* Dùng `synchronize` (rsync) thay cho `copy`.
         *   *Cấu hình file:* Dùng `template` thay vì chạy `loop` qua `lineinfile`.
-        *   *Async:* Dùng `async` và `poll: 0` (Fire and forget) cho task tốn thời gian.
     *   **Đo lường thời gian (Profiling):**
         *   Bật callback plug-in trong `ansible.cfg`:
             `callbacks_enabled = ansible.posix.timer, ansible.posix.profile_tasks, ansible.posix.profile_roles`
