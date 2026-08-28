@@ -14,4 +14,6 @@ collections:
     source: galaxy
   - name: ansible.utils
     source: galaxy
+  - name: cloud.terraform
+    source: galaxy
 ...
