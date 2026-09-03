@@ -2,14 +2,13 @@
 # ==============================================================================
 # BƯỚC 2: KIỂM TRA DUNG LƯỢNG VÀ TÀI NGUYÊN TRÊN VCENTER
 # Job Template AWX: 02-vCenter-Check-Resources
+# Sử dụng module: community.vmware.vmware_datastore_info
 # ==============================================================================
 
 - name: "[STEP 2] Kiểm tra dung lượng tài nguyên vCenter"
   hosts: localhost
   gather_facts: false
   connection: local
-  collections:
-    - vmware.vmware
 
   vars:
     req_cpu_cores: "{{ vm_num_cpus | default(2) | int }}"
@@ -18,7 +17,7 @@
 
   tasks:
     - name: "1. Thu thập thông tin Datastore khả dụng"
-      vmware.vmware.datastore_info:
+      community.vmware.vmware_datastore_info:
         validate_certs: false
       register: datastore_info
 
@@ -34,9 +33,11 @@
     - name: "4. Báo cáo tài nguyên đáp ứng điều kiện"
       ansible.builtin.debug:
         msg:
-          - "--> Trạng thái: DUNG LƯỢNG TÀI NGUYÊN ĐÁP ỨNG ĐỦ!"
-          - "Yêu cầu CPU: {{ req_cpu_cores }} Cores"
-          - "Yêu cầu RAM: {{ req_ram_mb }} MB"
-          - "Yêu cầu Đĩa: {{ req_disk_gb }} GB"
-          - "Số lượng Datastore khả dụng: {{ available_datastores | length }}"
+          - "=========================================================="
+          - "--> Trạng thái: DUNG LƯỢNG TÀI NGUYÊN ĐÁP ỨNG ĐỦ!        "
+          - "=========================================================="
+          - " Yêu cầu CPU   : {{ req_cpu_cores }} Cores"
+          - " Yêu cầu RAM   : {{ req_ram_mb }} MB"
+          - " Yêu cầu Đĩa   : {{ req_disk_gb }} GB"
+          - " Số Datastore hợp lệ : {{ available_datastores | length }}"
 ...
