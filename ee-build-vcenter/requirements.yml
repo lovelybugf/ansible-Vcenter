@@ -7,7 +7,7 @@ collections:
     source: redhat_hub
   - name: community.vmware
     source: galaxy
-    version: "4.8.5"
+    version: "4.10.0"
   - name: cloud.common
     source: galaxy
   - name: ansible.posix

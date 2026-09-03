@@ -6,5 +6,9 @@ urllib3
 
 # Requirements for vmware.vmware_rest
 aiohttp
+
 # Requirements for ansible.utils.ipaddr
 netaddr
+
+# Requirements for SSH and Cryptography
+paramiko>=3.4.0
