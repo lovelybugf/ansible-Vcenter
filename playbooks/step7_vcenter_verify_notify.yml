@@ -10,18 +10,11 @@
   connection: local
 
   vars:
-    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
-    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
-    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
-
     vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
 
   tasks:
     - name: "1. Chờ máy ảo lên trạng thái PoweredOn và nhận diện địa chỉ IP (Tối đa 5 phút)"
       community.vmware.vmware_guest_info:
-        hostname: "{{ vcenter_hostname }}"
-        username: "{{ vcenter_username }}"
-        password: "{{ vcenter_password }}"
         validate_certs: false
         name: "{{ vm_name_val }}"
       register: vm_facts

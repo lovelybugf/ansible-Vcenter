@@ -10,10 +10,6 @@
   connection: local
 
   vars:
-    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
-    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
-    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
-
     vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
     datacenter_val: "{{ vm_datacenter | default('Datacenter') }}"
     datastore_val: "{{ selected_datastore | default('datastore1') }}"
@@ -25,9 +21,6 @@
   tasks:
     - name: "1. Khởi tạo máy ảo với thông số tùy chỉnh (Không thêm Card mạng)"
       community.vmware.vmware_guest:
-        hostname: "{{ vcenter_hostname }}"
-        username: "{{ vcenter_username }}"
-        password: "{{ vcenter_password }}"
         validate_certs: false
         name: "{{ vm_name_val }}"
         datacenter: "{{ datacenter_val }}"
@@ -42,9 +35,6 @@
           - size_gb: "{{ disk_size_gb_val }}"
             type: thin
             datastore: "{{ datastore_val }}"
-        # ----------------------------------------------------------------------
-        # LƯU Ý: Phần khai báo Card mạng (networks:) được để trống theo yêu cầu
-        # ----------------------------------------------------------------------
         networks: []
       register: vm_create_res
 

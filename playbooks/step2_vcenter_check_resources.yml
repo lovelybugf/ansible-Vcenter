@@ -10,10 +10,6 @@
   connection: local
 
   vars:
-    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
-    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
-    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
-
     req_cpu_cores: "{{ vm_num_cpus | default(2) | int }}"
     req_ram_mb: "{{ vm_memory_mb | default(4096) | int }}"
     req_disk_gb: "{{ vm_disk_gb | default(40) | int }}"
@@ -21,9 +17,6 @@
   tasks:
     - name: "1. Thu thập thông tin Datastore khả dụng"
       community.vmware.vmware_datastore_info:
-        hostname: "{{ vcenter_hostname }}"
-        username: "{{ vcenter_username }}"
-        password: "{{ vcenter_password }}"
         validate_certs: false
       register: datastore_info
 

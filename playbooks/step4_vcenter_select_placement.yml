@@ -10,19 +10,12 @@
   connection: local
 
   vars:
-    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
-    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
-    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
-
     target_datacenter: "{{ vm_datacenter | default('Datacenter') }}"
     target_datastore: "{{ vm_datastore | default('') }}"
 
   tasks:
     - name: "1. Thu thập danh sách Datastore"
       community.vmware.vmware_datastore_info:
-        hostname: "{{ vcenter_hostname }}"
-        username: "{{ vcenter_username }}"
-        password: "{{ vcenter_password }}"
         validate_certs: false
       register: ds_info
 
