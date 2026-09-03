@@ -1,12 +1,25 @@
 ==============================================================================
-THIẾT KẾ CHI TIẾT LUỒNG KHỞI TẠO MÁY ẢO RHEL TRÊN VCENTER (MÔ-ĐUN HÓA AWX)
+TÀI LIỆU QUY TRÌNH & BẢN THIẾT KẾ TỰ ĐỘNG HÓA KHI TRIỂN KHAI MÁY ẢO VCENTER
 ==============================================================================
-Tệp tin này dùng để lưu trữ và quản lý quy trình triển khai máy ảo. 
-Khi có bất kỳ thay đổi nào về luồng thực thi trong tương lai, vui lòng cập nhật 
-vào tệp tin này trước khi chỉnh sửa mã nguồn Playbook.
+Tệp tin này dùng để lưu trữ toàn bộ các bước từ khảo sát, thiết kế luồng, đóng gói 
+EE đến cấu hình Playbook. Khi có bất kỳ thay đổi nào trong tương lai, vui lòng 
+cập nhật tài liệu này trước khi chỉnh sửa mã nguồn.
 
 ------------------------------------------------------------------------------
-I. SƠ ĐỒ TỔNG QUAN LUỒNG WORKFLOW (7 BƯỚC)
+1. KHẢO SÁT MỤC TIÊU (VMWARE / VCENTER)
+------------------------------------------------------------------------------
+- Môi trường hạ tầng: VMware vCenter Server API (Truy cập qua IP 10.0.55.12).
+- Các đối tượng tài nguyên: Datacenter, Clusters, ESXi Hosts, Datastores.
+- Yêu cầu kỹ thuật máy ảo RHEL:
+  + Tự động kiểm tra dung lượng CPU/RAM/Storage khả dụng trên Datastore.
+  + Tự động kiểm tra trùng tên máy ảo trên vCenter để tránh đè dữ liệu.
+  + Khởi tạo khung VM với thông số vCPU/RAM/Thin Disk tùy chỉnh.
+  + Theo yêu cầu thiết kế: Để trống bước khai báo Card mạng (networks: []).
+  + Gắn ISO Kickstart cài tự động hệ điều hành RHEL và bật nguồn (Power On).
+  + Xác minh máy ảo bật nguồn ổn định và gửi thông báo phản hồi (Response).
+
+------------------------------------------------------------------------------
+2. THIẾT KẾ LUỒNG AUTOMATION (7 BƯỚC MÔ-ĐUN HÓA AWX WORKFLOW)
 ------------------------------------------------------------------------------
 [BƯỚC 1: Test Connection] 
        │ (Success)
@@ -18,65 +31,51 @@ I. SƠ ĐỒ TỔNG QUAN LUỒNG WORKFLOW (7 BƯỚC)
        │ (Success)
        ▼
 [BƯỚC 4: Select Placement]
-       │ (Chọn Datastore tối ưu)
+       │ (Chọn Datastore tối ưu nhiều đĩa trống nhất)
        ▼
 [BƯỚC 5: Create Custom VM]
        │ (Tạo khung VM vCPU/RAM/Disk, để trống Card mạng)
        ▼
 [BƯỚC 6: Boot RHEL Kickstart]
-       │ (Gắn ISO Kickstart & Power ON cài OS)
+       │ (Gắn ISO Kickstart RHEL & Power On)
        ▼
 [BƯỚC 7: Verify & Notify] ────────────────────────► [SUCCESS: Trả phản hồi]
 
 ------------------------------------------------------------------------------
-II. CHI TIẾT 7 BƯỚC TRONG LUỒNG TRIỂN KHAI
+3. CHỌN COLLECTION PHÙ HỢP VÀ BUILD EXECUTION ENVIRONMENT (EE)
 ------------------------------------------------------------------------------
-
-1. BƯỚC 1: KIỂM TRA KẾT NỐI API VCENTER
-   - Tệp Playbook: step1_vcenter_test_connection.yml
-   - Job Template AWX: 01-vCenter-Test-Connection
-   - Mô tả: Kiểm tra kết nối mạng và xác thực tài khoản vCenter API qua thông tin AWX Credential.
-   - Đầu ra: Thông tin phiên bản vCenter (Name, Build, OS).
-
-2. BƯỚC 2: KIỂM TRA TÀI NGUYÊN HẠ TẦNG
-   - Tệp Playbook: step2_vcenter_check_resources.yml
-   - Job Template AWX: 02-vCenter-Check-Resources
-   - Mô tả: Đếm số Datastore khả dụng và đối chiếu dung lượng trống với dung lượng ổ đĩa yêu cầu.
-   - Xử lý lỗi: Dừng tiến trình ngay nếu không có Datastore nào đủ dung lượng trống.
-
-3. BƯỚC 3: KIỂM TRA TRÙNG TÊN MÁY ẢO
-   - Tệp Playbook: step3_vcenter_check_vm_name.yml
-   - Job Template AWX: 03-vCenter-Check-VM-Name
-   - Mô tả: Quét danh sách tất cả các máy ảo hiện có trên vCenter để đảm bảo tên máy ảo mới chưa tồn tại.
-   - Xử lý lỗi: Dừng tiến trình ngay nếu tên bị trùng để tránh ghi đè dữ liệu.
-
-4. BƯỚC 4: CHỌN VỊ TRÍ LƯU TRỮ TỐI ƯU (PLACEMENT)
-   - Tệp Playbook: step4_vcenter_select_placement.yml
-   - Job Template AWX: 04-vCenter-Select-Placement
-   - Mô tả: Tự động sắp xếp và chọn ra Datastore có dung lượng dư dả nhất nếu người dùng không chỉ định.
-   - Đầu ra: Biến selected_datastore chốt vị trí lưu trữ.
-
-5. BƯỚC 5: TẠO KHUNG MÁY ẢO VỚI THÔNG SỐ TÙY CHỈNH (NO NIC)
-   - Tệp Playbook: step5_vcenter_create_vm.yml
-   - Job Template AWX: 05-vCenter-Create-Custom-VM
-   - Mô tả: Khởi tạo cấu hình máy ảo (vCPU, RAM, Disk Thin Provisioning).
-   - Thiết kế đặc biệt: Phần khai báo Card mạng (networks: []) được để trống chuẩn bị cho các bước sau.
-
-6. BƯỚC 6: GẮN ISO KICKSTART VÀ BOOT CÀI ĐẶT RHEL
-   - Tệp Playbook: step6_vcenter_boot_kickstart.yml
-   - Job Template AWX: 06-vCenter-Boot-RHEL-Kickstart
-   - Mô tả: Gắn tệp ISO Kickstart vào ổ đĩa CD-ROM của máy ảo và bật nguồn (Power ON) để chạy cài đặt tự động.
-
-7. BƯỚC 7: KIỂM TRA ĐỘ ỔN ĐỊNH VÀ GỬI PHẢN HỒI KẾT QUẢ
-   - Tệp Playbook: step7_vcenter_verify_notify.yml
-   - Job Template AWX: 07-vCenter-Verify-And-Notify
-   - Mô tả: Vòng lặp chờ máy ảo lên nguồn, kiểm tra trạng thái hoạt động và xuất thông điệp phản hồi hoàn tất.
+- Chọn Collection: Red Hat Certified Content 'vmware.vmware' (phiên bản 2.9.0) 
+  được tải từ nguồn Red Hat Console Automation Hub (redhat_hub).
+- Thư viện Python bắt buộc trong EE:
+  + pyVmomi>=8.0.3.0.1
+  + vmware-vcenter
+  + netaddr
+  + pytfe>=1.2.0
+- Cấu hình Build EE (Thư mục ee-build-vcenter):
+  + Tệp execution-environment.yml: Định nghĩa Base Image, Python requirements, 
+    Galaxy collections và các bước nạp token Red Hat Console.
+  + Đóng gói thành container image và đẩy lên Quay local:
+    quay-ssc2.local.amigo.com/admin/nampd-vmware-ee:v1.3
 
 ------------------------------------------------------------------------------
-III. NHẬT KÝ CẬP NHẬT LUỒNG (REVISION HISTORY)
+4. VIẾT VÀ QUẢN LÝ NGUỒN CÁC PLAYBOOK (MÔ-ĐUN HÓA AWX)
 ------------------------------------------------------------------------------
-- Phiên bản 1.0 (03/09/2026):
-  + Khởi tạo luồng 7 bước chuẩn hóa mô-đun cho AWX Workflow.
-  + Chuẩn hóa việc sử dụng AWX Credential môi trường (loại bỏ biến vCenter cứng).
-  + Để trống bước cấu hình Card mạng tại Bước 5.
+Tất cả các Playbook đều dùng FQCN 'vmware.vmware' và tự động nhận dạng biến môi
+trường AWX Credential (VMWARE_HOST, VMWARE_USER, VMWARE_PASSWORD):
+
+1. step1_vcenter_test_connection.yml : Kiểm tra kết nối vCenter API.
+2. step2_vcenter_check_resources.yml   : Kiểm tra đủ RAM/CPU và đĩa cứng trống.
+3. step3_vcenter_check_vm_name.yml     : Kiểm tra tên máy ảo chưa bị trùng.
+4. step4_vcenter_select_placement.yml  : Tự chọn Datastore có dung lượng nhiều nhất.
+5. step5_vcenter_create_vm.yml         : Tạo khung VM cấu hình tùy chỉnh (No NIC).
+6. step6_vcenter_boot_kickstart.yml    : Gắn ISO Kickstart & bật nguồn RHEL.
+7. step7_vcenter_verify_notify.yml     : Kiểm tra VM hoạt động & gửi báo cáo.
+
+------------------------------------------------------------------------------
+V. NHẬT KÝ CẬP NHẬT LUỒNG (REVISION HISTORY)
+------------------------------------------------------------------------------
+- Phiên bản 1.1 (03/09/2026):
+  + Tái cấu trúc tài liệu chuẩn hóa theo 4 giai đoạn chuẩn: Khảo sát, Thiết kế, 
+    Build EE và Viết Playbook.
+  + Chuẩn hóa collection sang Red Hat Certified 'vmware.vmware' từ Console Hub.
 ==============================================================================
