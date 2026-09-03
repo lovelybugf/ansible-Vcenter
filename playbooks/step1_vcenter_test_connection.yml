@@ -2,7 +2,6 @@
 # ==============================================================================
 # BƯỚC 1: KIỂM TRA KẾT NỐI API VCENTER
 # Job Template AWX: 01-vCenter-Test-Connection
-# Sử dụng Red Hat Certified Collection: vmware.vmware (Module: appliance_info)
 # ==============================================================================
 
 - name: "[STEP 1] Kiểm tra kết nối vCenter API"
@@ -14,7 +13,7 @@
 
   tasks:
     - name: "1. Thử nghiệm kết nối vCenter API"
-      vmware.vmware.appliance_info:
+      vmware.vmware.vmware_about_info:
         validate_certs: false
       register: vcenter_info
 
@@ -22,5 +21,7 @@
       ansible.builtin.debug:
         msg:
           - "--> Trạng thái: KẾT NỐI VCENTER THÀNH CÔNG!"
-          - "Thông tin vCenter Appliance: {{ vcenter_info.appliance | default(vcenter_info) }}"
+          - "Phiên bản vCenter: {{ vcenter_info.about_info.fullName }}"
+          - "Build number: {{ vcenter_info.about_info.build }}"
+          - "OS Type: {{ vcenter_info.about_info.osType }}"
 ...
