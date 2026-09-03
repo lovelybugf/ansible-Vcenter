@@ -20,7 +20,5 @@
       ansible.builtin.debug:
         msg:
           - "--> Trạng thái: KẾT NỐI VCENTER THÀNH CÔNG!"
-          - "Phiên bản vCenter: {{ vcenter_info.about_info.fullName }}"
-          - "Build number: {{ vcenter_info.about_info.build }}"
-          - "OS Type: {{ vcenter_info.about_info.osType }}"
+          - "Thông tin chi tiết vCenter: {{ vcenter_info.about_info | default(vcenter_info) }}"
 ...
