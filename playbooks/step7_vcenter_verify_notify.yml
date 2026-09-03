@@ -2,6 +2,7 @@
 # ==============================================================================
 # BƯỚC 7: KIỂM TRA MÁY ẢO BẬT ỔN ĐỊNH VÀ GỬI PHẢN HỒI KẾT QUẢ
 # Job Template AWX: 07-vCenter-Verify-And-Notify
+# Ưu tiên Red Hat Certified vmware.vmware, tự động hỗ trợ community.vmware
 # ==============================================================================
 
 - name: "[STEP 7] Kiểm tra độ ổn định máy ảo và gửi phản hồi"
@@ -10,13 +11,14 @@
   connection: local
   collections:
     - vmware.vmware
+    - community.vmware
 
   vars:
     vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
 
   tasks:
     - name: "1. Chờ máy ảo lên trạng thái PoweredOn và nhận diện địa chỉ IP (Tối đa 5 phút)"
-      vmware.vmware.guest_info:
+      guest_info:
         validate_certs: false
         name: "{{ vm_name_val }}"
       register: vm_facts

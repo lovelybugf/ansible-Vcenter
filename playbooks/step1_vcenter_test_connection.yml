@@ -2,17 +2,20 @@
 # ==============================================================================
 # BƯỚC 1: KIỂM TRA KẾT NỐI API VCENTER
 # Job Template AWX: 01-vCenter-Test-Connection
-# Sử dụng module: community.vmware.vmware_about_info
+# Ưu tiên Red Hat Certified vmware.vmware, tự động hỗ trợ community.vmware
 # ==============================================================================
 
 - name: "[STEP 1] Kiểm tra kết nối vCenter API"
   hosts: localhost
   gather_facts: false
   connection: local
+  collections:
+    - vmware.vmware
+    - community.vmware
 
   tasks:
     - name: "1. Thử nghiệm kết nối vCenter API"
-      community.vmware.vmware_about_info:
+      vmware_about_info:
         validate_certs: false
       register: vcenter_info
 
@@ -22,10 +25,5 @@
           - "=========================================================="
           - "--> Trạng thái: KẾT NỐI VCENTER THÀNH CÔNG!                "
           - "=========================================================="
-          - " Sản phẩm        : {{ vcenter_info.about_info.product_full_name }}"
-          - " Phiên bản vSphere: {{ vcenter_info.about_info.version }} (Build {{ vcenter_info.about_info.build }})"
-          - " Phiên bản API   : {{ vcenter_info.about_info.api_version }}"
-          - " Cổng kết nối API : {{ vcenter_info.about_info.api_type }}"
-          - " Hệ điều hành VCSA: {{ vcenter_info.about_info.os_type }}"
-          - " vCenter UUID    : {{ vcenter_info.about_info.instance_uuid }}"
+          - " Thông tin vCenter: {{ vcenter_info.about_info | default(vcenter_info) }}"
 ...
