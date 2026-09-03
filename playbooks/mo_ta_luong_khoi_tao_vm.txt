@@ -1,0 +1,82 @@
+==============================================================================
+THIẾT KẾ CHI TIẾT LUỒNG KHỞI TẠO MÁY ẢO RHEL TRÊN VCENTER (MÔ-ĐUN HÓA AWX)
+==============================================================================
+Tệp tin này dùng để lưu trữ và quản lý quy trình triển khai máy ảo. 
+Khi có bất kỳ thay đổi nào về luồng thực thi trong tương lai, vui lòng cập nhật 
+vào tệp tin này trước khi chỉnh sửa mã nguồn Playbook.
+
+------------------------------------------------------------------------------
+I. SƠ ĐỒ TỔNG QUAN LUỒNG WORKFLOW (7 BƯỚC)
+------------------------------------------------------------------------------
+[BƯỚC 1: Test Connection] 
+       │ (Success)
+       ▼
+[BƯỚC 2: Check Resources] ──(Không đủ RAM/Disk)──► [STOP: Fail Fast]
+       │ (Success)
+       ▼
+[BƯỚC 3: Check VM Name]   ──(Trùng tên VM)───────► [STOP: Fail Fast]
+       │ (Success)
+       ▼
+[BƯỚC 4: Select Placement]
+       │ (Chọn Datastore tối ưu)
+       ▼
+[BƯỚC 5: Create Custom VM]
+       │ (Tạo khung VM vCPU/RAM/Disk, để trống Card mạng)
+       ▼
+[BƯỚC 6: Boot RHEL Kickstart]
+       │ (Gắn ISO Kickstart & Power ON cài OS)
+       ▼
+[BƯỚC 7: Verify & Notify] ────────────────────────► [SUCCESS: Trả phản hồi]
+
+------------------------------------------------------------------------------
+II. CHI TIẾT 7 BƯỚC TRONG LUỒNG TRIỂN KHAI
+------------------------------------------------------------------------------
+
+1. BƯỚC 1: KIỂM TRA KẾT NỐI API VCENTER
+   - Tệp Playbook: step1_vcenter_test_connection.yml
+   - Job Template AWX: 01-vCenter-Test-Connection
+   - Mô tả: Kiểm tra kết nối mạng và xác thực tài khoản vCenter API qua thông tin AWX Credential.
+   - Đầu ra: Thông tin phiên bản vCenter (Name, Build, OS).
+
+2. BƯỚC 2: KIỂM TRA TÀI NGUYÊN HẠ TẦNG
+   - Tệp Playbook: step2_vcenter_check_resources.yml
+   - Job Template AWX: 02-vCenter-Check-Resources
+   - Mô tả: Đếm số Datastore khả dụng và đối chiếu dung lượng trống với dung lượng ổ đĩa yêu cầu.
+   - Xử lý lỗi: Dừng tiến trình ngay nếu không có Datastore nào đủ dung lượng trống.
+
+3. BƯỚC 3: KIỂM TRA TRÙNG TÊN MÁY ẢO
+   - Tệp Playbook: step3_vcenter_check_vm_name.yml
+   - Job Template AWX: 03-vCenter-Check-VM-Name
+   - Mô tả: Quét danh sách tất cả các máy ảo hiện có trên vCenter để đảm bảo tên máy ảo mới chưa tồn tại.
+   - Xử lý lỗi: Dừng tiến trình ngay nếu tên bị trùng để tránh ghi đè dữ liệu.
+
+4. BƯỚC 4: CHỌN VỊ TRÍ LƯU TRỮ TỐI ƯU (PLACEMENT)
+   - Tệp Playbook: step4_vcenter_select_placement.yml
+   - Job Template AWX: 04-vCenter-Select-Placement
+   - Mô tả: Tự động sắp xếp và chọn ra Datastore có dung lượng dư dả nhất nếu người dùng không chỉ định.
+   - Đầu ra: Biến selected_datastore chốt vị trí lưu trữ.
+
+5. BƯỚC 5: TẠO KHUNG MÁY ẢO VỚI THÔNG SỐ TÙY CHỈNH (NO NIC)
+   - Tệp Playbook: step5_vcenter_create_vm.yml
+   - Job Template AWX: 05-vCenter-Create-Custom-VM
+   - Mô tả: Khởi tạo cấu hình máy ảo (vCPU, RAM, Disk Thin Provisioning).
+   - Thiết kế đặc biệt: Phần khai báo Card mạng (networks: []) được để trống chuẩn bị cho các bước sau.
+
+6. BƯỚC 6: GẮN ISO KICKSTART VÀ BOOT CÀI ĐẶT RHEL
+   - Tệp Playbook: step6_vcenter_boot_kickstart.yml
+   - Job Template AWX: 06-vCenter-Boot-RHEL-Kickstart
+   - Mô tả: Gắn tệp ISO Kickstart vào ổ đĩa CD-ROM của máy ảo và bật nguồn (Power ON) để chạy cài đặt tự động.
+
+7. BƯỚC 7: KIỂM TRA ĐỘ ỔN ĐỊNH VÀ GỬI PHẢN HỒI KẾT QUẢ
+   - Tệp Playbook: step7_vcenter_verify_notify.yml
+   - Job Template AWX: 07-vCenter-Verify-And-Notify
+   - Mô tả: Vòng lặp chờ máy ảo lên nguồn, kiểm tra trạng thái hoạt động và xuất thông điệp phản hồi hoàn tất.
+
+------------------------------------------------------------------------------
+III. NHẬT KÝ CẬP NHẬT LUỒNG (REVISION HISTORY)
+------------------------------------------------------------------------------
+- Phiên bản 1.0 (03/09/2026):
+  + Khởi tạo luồng 7 bước chuẩn hóa mô-đun cho AWX Workflow.
+  + Chuẩn hóa việc sử dụng AWX Credential môi trường (loại bỏ biến vCenter cứng).
+  + Để trống bước cấu hình Card mạng tại Bước 5.
+==============================================================================
