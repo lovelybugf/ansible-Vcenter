@@ -2,7 +2,7 @@
 # ==============================================================================
 # BƯỚC 5: TẠO MÁY ẢO VỚI THÔNG SỐ TÙY CHỈNH (ĐỂ TRỐNG BƯỚC THÊM CARD MẠNG)
 # Job Template AWX: 05-vCenter-Create-Custom-VM
-# Sử dụng Red Hat Certified Collection: vmware.vmware từ Console Automation Hub
+# Sử dụng collection: community.vmware (có sẵn trong EE v1.2)
 # ==============================================================================
 
 - name: "[STEP 5] Khởi tạo máy ảo tùy chỉnh cấu hình"
@@ -21,7 +21,7 @@
 
   tasks:
     - name: "1. Khởi tạo máy ảo với thông số tùy chỉnh (Không thêm Card mạng)"
-      vmware.vmware.vmware_guest:
+      community.vmware.vmware_guest:
         validate_certs: false
         name: "{{ vm_name_val }}"
         datacenter: "{{ datacenter_val }}"

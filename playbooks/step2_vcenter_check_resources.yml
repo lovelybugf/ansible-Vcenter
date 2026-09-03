@@ -2,7 +2,7 @@
 # ==============================================================================
 # BƯỚC 2: KIỂM TRA DUNG LƯỢNG VÀ TÀI NGUYÊN TRÊN VCENTER
 # Job Template AWX: 02-vCenter-Check-Resources
-# Sử dụng Red Hat Certified Collection: vmware.vmware từ Console Automation Hub
+# Sử dụng collection: community.vmware (có sẵn trong EE v1.2)
 # ==============================================================================
 
 - name: "[STEP 2] Kiểm tra dung lượng tài nguyên vCenter"
@@ -17,7 +17,7 @@
 
   tasks:
     - name: "1. Thu thập thông tin Datastore khả dụng"
-      vmware.vmware.vmware_datastore_info:
+      community.vmware.vmware_datastore_info:
         validate_certs: false
       register: datastore_info
 

@@ -2,7 +2,7 @@
 # ==============================================================================
 # BƯỚC 3: KIỂM TRA TÊN MÁY ẢO ĐÃ TỒN TẠI TRÊN VCENTER CHƯA
 # Job Template AWX: 03-vCenter-Check-VM-Name
-# Sử dụng Red Hat Certified Collection: vmware.vmware từ Console Automation Hub
+# Sử dụng collection: community.vmware (có sẵn trong EE v1.2)
 # ==============================================================================
 
 - name: "[STEP 3] Kiểm tra tên máy ảo vCenter"
@@ -15,7 +15,7 @@
 
   tasks:
     - name: "1. Thu thập danh sách máy ảo đang có trên vCenter"
-      vmware.vmware.vmware_vm_info:
+      community.vmware.vmware_vm_info:
         validate_certs: false
       register: vm_list
 
