@@ -8,7 +8,8 @@ cập nhật tài liệu này trước khi chỉnh sửa mã nguồn.
 ------------------------------------------------------------------------------
 1. KHẢO SÁT MỤC TIÊU (VMWARE / VCENTER)
 ------------------------------------------------------------------------------
-- Môi trường hạ tầng: VMware vCenter Server API (Truy cập qua IP 10.0.55.12).
+- Môi trường hạ tầng: VMware vCenter Server API (FQDN: vcenter.amigo.lab / IP: 10.0.55.12).
+- Tài khoản quản trị SSO khảo sát: soft.02@amigo.local / administrator@vsphere.local.
 - Các đối tượng tài nguyên: Datacenter, Clusters, ESXi Hosts, Datastores.
 - Yêu cầu kỹ thuật máy ảo RHEL:
   + Tự động kiểm tra dung lượng CPU/RAM/Storage khả dụng trên Datastore.
