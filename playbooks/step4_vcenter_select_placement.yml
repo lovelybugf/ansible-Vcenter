@@ -2,6 +2,7 @@
 # ==============================================================================
 # BƯỚC 4: CHỌN VỊ TRÍ LƯU TRỮ VÀ CLUSTER CHO MÁY ẢO (PLACEMENT)
 # Job Template AWX: 04-vCenter-Select-Placement
+# Sử dụng Red Hat Certified Collection: vmware.vmware từ Console Automation Hub
 # ==============================================================================
 
 - name: "[STEP 4] Chọn vị trí lưu trữ VM tốt nhất"
@@ -15,7 +16,7 @@
 
   tasks:
     - name: "1. Thu thập danh sách Datastore"
-      community.vmware.vmware_datastore_info:
+      vmware.vmware.vmware_datastore_info:
         validate_certs: false
       register: ds_info
 
