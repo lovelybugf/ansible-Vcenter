@@ -2,7 +2,7 @@
 # ==============================================================================
 # BƯỚC 2: KIỂM TRA DUNG LƯỢNG VÀ TÀI NGUYÊN TRÊN VCENTER
 # Job Template AWX: 02-vCenter-Check-Resources
-# Sử dụng tên đầy đủ (FQCN): community.vmware.vmware_datastore_info
+# Kết hợp module Cluster (CPU/RAM) và Datastore (Storage)
 # ==============================================================================
 
 - name: "[STEP 2] Kiểm tra dung lượng tài nguyên vCenter"
@@ -16,7 +16,13 @@
     req_disk_gb: "{{ vm_disk_gb | default(40) | int }}"
 
   tasks:
-    - name: "1. Thu thập thông tin Datastore khả dụng"
+    - name: "1a. Thu thập thông tin Cluster (CPU & RAM)"
+      community.vmware.vmware_cluster_info:
+        validate_certs: false
+      register: cluster_info
+      ignore_errors: true
+
+    - name: "1b. Thu thập thông tin Datastore (Dung lượng đĩa cứng)"
       community.vmware.vmware_datastore_info:
         validate_certs: false
       register: datastore_info
@@ -36,8 +42,8 @@
           - "=========================================================="
           - "--> Trạng thái: DUNG LƯỢNG TÀI NGUYÊN ĐÁP ỨNG ĐỦ!        "
           - "=========================================================="
-          - " Yêu cầu CPU   : {{ req_cpu_cores }} Cores"
-          - " Yêu cầu RAM   : {{ req_ram_mb }} MB"
-          - " Yêu cầu Đĩa   : {{ req_disk_gb }} GB"
-          - " Số Datastore hợp lệ : {{ available_datastores | length }}"
+          - " Yêu cầu CPU        : {{ req_cpu_cores }} Cores"
+          - " Yêu cầu RAM        : {{ req_ram_mb }} MB"
+          - " Yêu cầu Đĩa        : {{ req_disk_gb }} GB"
+          - " Số Datastore hợp lệ: {{ available_datastores | length }}"
 ...
