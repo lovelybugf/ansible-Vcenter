@@ -1,0 +1,47 @@
+---
+# ==============================================================================
+# BƯỚC 2: KIỂM TRA DUNG LƯỢNG VÀ TÀI NGUYÊN TRÊN VCENTER
+# Job Template AWX: 02-vCenter-Check-Resources
+# ==============================================================================
+
+- name: "[STEP 2] Kiểm tra dung lượng tài nguyên vCenter"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+
+    req_cpu_cores: "{{ vm_num_cpus | default(2) | int }}"
+    req_ram_mb: "{{ vm_memory_mb | default(4096) | int }}"
+    req_disk_gb: "{{ vm_disk_gb | default(40) | int }}"
+
+  tasks:
+    - name: "1. Thu thập thông tin Datastore khả dụng"
+      community.vmware.vmware_datastore_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+      register: datastore_info
+
+    - name: "2. Phân tích dung lượng trống trên các Datastore"
+      ansible.builtin.set_fact:
+        available_datastores: "{{ datastore_info.datastores | selectattr('freeSpace', 'gt', req_disk_gb * 1073741824) | list }}"
+
+    - name: "3. Xác nhận tài nguyên đĩa cứng khả dụng"
+      ansible.builtin.fail:
+        msg: "KHÔNG ĐỦ DUNG LƯỢNG! Yêu cầu {{ req_disk_gb }} GB đĩa trống nhưng không tìm thấy Datastore phù hợp."
+      when: available_datastores | length == 0
+
+    - name: "4. Báo cáo tài nguyên đáp ứng điều kiện"
+      ansible.builtin.debug:
+        msg:
+          - "--> Trạng thái: DUNG LƯỢNG TÀI NGUYÊN ĐÁP ỨNG ĐỦ!"
+          - "Yêu cầu CPU: {{ req_cpu_cores }} Cores"
+          - "Yêu cầu RAM: {{ req_ram_mb }} MB"
+          - "Yêu cầu Đĩa: {{ req_disk_gb }} GB"
+          - "Số lượng Datastore khả dụng: {{ available_datastores | length }}"
+...

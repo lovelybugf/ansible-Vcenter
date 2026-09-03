@@ -1,0 +1,60 @@
+---
+# ==============================================================================
+# BƯỚC 5: TẠO MÁY ẢO VỚI THÔNG SỐ TÙY CHỈNH (ĐỂ TRỐNG BƯỚC THÊM CARD MẠNG)
+# Job Template AWX: 05-vCenter-Create-Custom-VM
+# ==============================================================================
+
+- name: "[STEP 5] Khởi tạo máy ảo tùy chỉnh cấu hình"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+
+    vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
+    datacenter_val: "{{ vm_datacenter | default('Datacenter') }}"
+    datastore_val: "{{ selected_datastore | default('datastore1') }}"
+    num_cpus_val: "{{ vm_num_cpus | default(2) | int }}"
+    memory_mb_val: "{{ vm_memory_mb | default(4096) | int }}"
+    disk_size_gb_val: "{{ vm_disk_gb | default(40) | int }}"
+    guest_os_id: "{{ vm_guest_id | default('rhel8_64Guest') }}"
+
+  tasks:
+    - name: "1. Khởi tạo máy ảo với thông số tùy chỉnh (Không thêm Card mạng)"
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        name: "{{ vm_name_val }}"
+        datacenter: "{{ datacenter_val }}"
+        datastore: "{{ datastore_val }}"
+        guest_id: "{{ guest_os_id }}"
+        state: poweredoff
+        hardware:
+          memory_mb: "{{ memory_mb_val }}"
+          num_cpus: "{{ num_cpus_val }}"
+          scsi: paravirtual
+        disk:
+          - size_gb: "{{ disk_size_gb_val }}"
+            type: thin
+            datastore: "{{ datastore_val }}"
+        # ----------------------------------------------------------------------
+        # LƯU Ý: Phần khai báo Card mạng (networks:) được để trống theo yêu cầu
+        # ----------------------------------------------------------------------
+        networks: []
+      register: vm_create_res
+
+    - name: "2. Hiển thị kết quả khởi tạo khung máy ảo"
+      ansible.builtin.debug:
+        msg:
+          - "--> KHỞI TẠO KHUNG MÁY ẢO THÀNH CÔNG!"
+          - "Tên máy ảo: {{ vm_name_val }}"
+          - "Số vCPU: {{ num_cpus_val }}"
+          - "Dung lượng RAM: {{ memory_mb_val }} MB"
+          - "Dung lượng Disk: {{ disk_size_gb_val }} GB Thin Provisioning"
+          - "Ghi chú: Bước thêm Card mạng được để trống chuẩn bị cấu hình sau."
+...

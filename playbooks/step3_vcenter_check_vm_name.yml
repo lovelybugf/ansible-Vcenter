@@ -1,0 +1,40 @@
+---
+# ==============================================================================
+# BƯỚC 3: KIỂM TRA TÊN MÁY ẢO ĐÃ TỒN TẠI TRÊN VCENTER CHƯA
+# Job Template AWX: 03-vCenter-Check-VM-Name
+# ==============================================================================
+
+- name: "[STEP 3] Kiểm tra tên máy ảo vCenter"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+
+    target_vm_name: "{{ vm_name | default('rhel-demo-vm') }}"
+
+  tasks:
+    - name: "1. Thu thập danh sách máy ảo đang có trên vCenter"
+      community.vmware.vmware_vm_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+      register: vm_list
+
+    - name: "2. Kiểm tra sự tồn tại của tên máy ảo '{{ target_vm_name }}'"
+      ansible.builtin.set_fact:
+        existing_vm: "{{ vm_list.virtual_machines | selectattr('guest_name', 'equalto', target_vm_name) | list }}"
+
+    - name: "3. Cảnh báo và dừng tiến trình nếu tên máy ảo bị trùng"
+      ansible.builtin.fail:
+        msg: "TRÙNG TÊN MÁY ẢO! Máy ảo có tên '{{ target_vm_name }}' đã tồn tại trên vCenter. Vui lòng chọn tên khác."
+      when: existing_vm | length > 0
+
+    - name: "4. Xác nhận tên máy ảo hợp lệ"
+      ansible.builtin.debug:
+        msg: "--> Tên máy ảo '{{ target_vm_name }}' ĐÃ ĐƯỢC XÁC NHẬN BÌNH THƯỜNG (Chưa tồn tại, sẵn sàng khởi tạo)."
+...

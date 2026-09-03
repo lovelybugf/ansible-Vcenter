@@ -1,0 +1,39 @@
+---
+# ==============================================================================
+# BƯỚC 4: CHỌN VỊ TRÍ LƯU TRỮ VÀ CLUSTER CHO MÁY ẢO (PLACEMENT)
+# Job Template AWX: 04-vCenter-Select-Placement
+# ==============================================================================
+
+- name: "[STEP 4] Chọn vị trí lưu trữ VM tốt nhất"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+
+    target_datacenter: "{{ vm_datacenter | default('Datacenter') }}"
+    target_datastore: "{{ vm_datastore | default('') }}"
+
+  tasks:
+    - name: "1. Thu thập danh sách Datastore"
+      community.vmware.vmware_datastore_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+      register: ds_info
+
+    - name: "2. Tự động chọn Datastore có dung lượng trống nhiều nhất (Nếu chưa chỉ định)"
+      ansible.builtin.set_fact:
+        selected_datastore: "{{ target_datastore if target_datastore != '' else (ds_info.datastores | sort(attribute='freeSpace', reverse=True) | first).name }}"
+
+    - name: "3. Hiển thị phương án chọn vị trí lưu trữ"
+      ansible.builtin.debug:
+        msg:
+          - "--> VỊ TRÍ LƯU TRỮ ĐƯỢC LỰA CHỌN:"
+          - "Datacenter: {{ target_datacenter }}"
+          - "Datastore tối ưu: {{ selected_datastore }}"
+...

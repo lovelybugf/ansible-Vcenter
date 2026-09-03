@@ -1,0 +1,33 @@
+---
+# ==============================================================================
+# BƯỚC 1: KIỂM TRA KẾT NỐI API VCENTER
+# Job Template AWX: 01-vCenter-Test-Connection
+# ==============================================================================
+
+- name: "[STEP 1] Kiểm tra kết nối vCenter API"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+
+  tasks:
+    - name: "1. Thử nghiệm kết nối vCenter API"
+      community.vmware.vmware_about_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+      register: vcenter_info
+
+    - name: "2. Hiển thị thông tin vCenter kết nối thành công"
+      ansible.builtin.debug:
+        msg:
+          - "--> Trạng thái: KẾT NỐI VCENTER THÀNH CÔNG!"
+          - "Phiên bản vCenter: {{ vcenter_info.about_info.fullName }}"
+          - "Build number: {{ vcenter_info.about_info.build }}"
+          - "OS Type: {{ vcenter_info.about_info.osType }}"
+...

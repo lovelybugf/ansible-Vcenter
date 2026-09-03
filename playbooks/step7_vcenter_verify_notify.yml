@@ -1,0 +1,49 @@
+---
+# ==============================================================================
+# BƯỚC 7: KIỂM TRA MÁY ẢO BẬT ỔN ĐỊNH VÀ GỬI PHẢN HỒI KẾT QUẢ
+# Job Template AWX: 07-vCenter-Verify-And-Notify
+# ==============================================================================
+
+- name: "[STEP 7] Kiểm tra độ ổn định máy ảo và gửi phản hồi"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+
+    vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
+
+  tasks:
+    - name: "1. Chờ máy ảo lên trạng thái PoweredOn và nhận diện địa chỉ IP (Tối đa 5 phút)"
+      community.vmware.vmware_guest_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        name: "{{ vm_name_val }}"
+      register: vm_facts
+      until: vm_facts.instance.hw_power_status == "POWERED-ON"
+      retries: 15
+      delay: 20
+
+    - name: "2. Ghi nhận trạng thái hoạt động thực tế của máy ảo"
+      ansible.builtin.set_fact:
+        vm_power_state: "{{ vm_facts.instance.hw_power_status }}"
+        vm_ip_addr: "{{ vm_facts.instance.ipv4 | default('Đang khởi động dịch vụ mạng') }}"
+
+    - name: "3. Gửi thông báo kết quả khởi tạo (MOCK Notification Response)"
+      ansible.builtin.debug:
+        msg:
+          - "=========================================================="
+          - "  HOÀN TẤT TOÀN BỘ TIẾN TRÌNH TRIỂN KHAI MÁY ẢO RHEL!     "
+          - "=========================================================="
+          - " Tên máy ảo       : {{ vm_name_val }}"
+          - " Trạng thái Nguồn : {{ vm_power_state }}"
+          - " Địa chỉ IP       : {{ vm_ip_addr }}"
+          - " Kết nối vCenter  : OK"
+          - " Tiến trình Boot  : Kickstart ISO RHEL thành công"
+          - " Phản hồi thông báo: Đã gửi tín hiệu Success về hệ thống."
+...

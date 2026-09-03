@@ -1,0 +1,52 @@
+---
+# ==============================================================================
+# BƯỚC 6: GẮN FILE KICKSTART ISO VÀ BOOT CÀI ĐẶT HỆ ĐIỀU HÀNH RHEL
+# Job Template AWX: 06-vCenter-Boot-RHEL-Kickstart
+# ==============================================================================
+
+- name: "[STEP 6] Boot hệ điều hành RHEL bằng tệp Kickstart ISO"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+
+    vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
+    iso_path_val: "{{ kickstart_iso_path | default('[datastore1] iso/rhel_kickstart.iso') }}"
+
+  tasks:
+    - name: "1. Gắn file ISO Kickstart vào ổ CD-ROM của máy ảo"
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        name: "{{ vm_name_val }}"
+        state: present
+        cdrom:
+          - type: iso
+            iso_path: "{{ iso_path_val }}"
+            state: present
+      register: cdrom_res
+
+    - name: "2. Khởi động máy ảo (Power On) để bắt đầu tiến trình tự động cài RHEL"
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        name: "{{ vm_name_val }}"
+        state: poweredon
+      register: poweron_res
+
+    - name: "3. Hiển thị thông báo tiến trình Boot Kickstart"
+      ansible.builtin.debug:
+        msg:
+          - "--> ĐÃ GẮN ISO KICKSTART VÀ BẬT NGUỒN MÁY ẢO THÀNH CÔNG!"
+          - "Tên máy ảo: {{ vm_name_val }}"
+          - "Đường dẫn ISO: {{ iso_path_val }}"
+          - "Trạng thái nguồn: Powered ON"
+...
