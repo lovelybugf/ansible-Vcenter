@@ -13,7 +13,7 @@
 
   tasks:
     - name: "1. Thử nghiệm kết nối vCenter API"
-      vmware.vmware.vmware_about_info:
+      vmware.vmware.about_info:
         validate_certs: false
       register: vcenter_info
 
