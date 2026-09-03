@@ -10,6 +10,10 @@ cập nhật tài liệu này trước khi chỉnh sửa mã nguồn.
 ------------------------------------------------------------------------------
 - Môi trường hạ tầng: VMware vCenter Server API (FQDN: vcenter.amigo.lab / IP: 10.0.55.12).
 - Tài khoản quản trị SSO khảo sát: soft.02@amigo.local / administrator@vsphere.local.
+- Kiểm tra phiên bản vCenter/VMware:
+  + Khảo sát phiên bản vCenter Server (vSphere Version 7.0 / 8.0, API REST / SOAP).
+  + Xác minh độ tương thích của Ansible Collection ('vmware.vmware' hoặc 'community.vmware') 
+    với phiên bản vSphere API và phiên bản Python pyVmomi trong Execution Environment.
 - Các đối tượng tài nguyên: Datacenter, Clusters, ESXi Hosts, Datastores.
 - Yêu cầu kỹ thuật máy ảo RHEL:
   + Tự động kiểm tra dung lượng CPU/RAM/Storage khả dụng trên Datastore.
