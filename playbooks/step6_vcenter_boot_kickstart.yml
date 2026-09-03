@@ -2,16 +2,13 @@
 # ==============================================================================
 # BƯỚC 6: GẮN FILE KICKSTART ISO VÀ BOOT CÀI ĐẶT HỆ ĐIỀU HÀNH RHEL
 # Job Template AWX: 06-vCenter-Boot-RHEL-Kickstart
-# Ưu tiên Red Hat Certified vmware.vmware, tự động hỗ trợ community.vmware
+# Sử dụng tên đầy đủ (FQCN): community.vmware.vmware_guest
 # ==============================================================================
 
 - name: "[STEP 6] Boot hệ điều hành RHEL bằng tệp Kickstart ISO"
   hosts: localhost
   gather_facts: false
   connection: local
-  collections:
-    - vmware.vmware
-    - community.vmware
 
   vars:
     vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
@@ -19,7 +16,7 @@
 
   tasks:
     - name: "1. Gắn file ISO Kickstart vào ổ CD-ROM của máy ảo"
-      guest:
+      community.vmware.vmware_guest:
         validate_certs: false
         name: "{{ vm_name_val }}"
         state: present
@@ -30,7 +27,7 @@
       register: cdrom_res
 
     - name: "2. Khởi động máy ảo (Power On) để bắt đầu tiến trình tự động cài RHEL"
-      guest:
+      community.vmware.vmware_guest:
         validate_certs: false
         name: "{{ vm_name_val }}"
         state: poweredon

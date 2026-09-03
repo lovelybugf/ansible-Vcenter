@@ -2,16 +2,13 @@
 # ==============================================================================
 # BƯỚC 5: TẠO MÁY ẢO VỚI THÔNG SỐ TÙY CHỈNH (ĐỂ TRỐNG BƯỚC THÊM CARD MẠNG)
 # Job Template AWX: 05-vCenter-Create-Custom-VM
-# Ưu tiên Red Hat Certified vmware.vmware, tự động hỗ trợ community.vmware
+# Sử dụng tên đầy đủ (FQCN): community.vmware.vmware_guest
 # ==============================================================================
 
 - name: "[STEP 5] Khởi tạo máy ảo tùy chỉnh cấu hình"
   hosts: localhost
   gather_facts: false
   connection: local
-  collections:
-    - vmware.vmware
-    - community.vmware
 
   vars:
     vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
@@ -24,7 +21,7 @@
 
   tasks:
     - name: "1. Khởi tạo máy ảo với thông số tùy chỉnh (Không thêm Card mạng)"
-      guest:
+      community.vmware.vmware_guest:
         validate_certs: false
         name: "{{ vm_name_val }}"
         datacenter: "{{ datacenter_val }}"

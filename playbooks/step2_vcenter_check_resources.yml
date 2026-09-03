@@ -2,16 +2,13 @@
 # ==============================================================================
 # BƯỚC 2: KIỂM TRA DUNG LƯỢNG VÀ TÀI NGUYÊN TRÊN VCENTER
 # Job Template AWX: 02-vCenter-Check-Resources
-# Ưu tiên Red Hat Certified vmware.vmware, tự động hỗ trợ community.vmware
+# Sử dụng tên đầy đủ (FQCN): community.vmware.vmware_datastore_info
 # ==============================================================================
 
 - name: "[STEP 2] Kiểm tra dung lượng tài nguyên vCenter"
   hosts: localhost
   gather_facts: false
   connection: local
-  collections:
-    - vmware.vmware
-    - community.vmware
 
   vars:
     req_cpu_cores: "{{ vm_num_cpus | default(2) | int }}"
@@ -20,7 +17,7 @@
 
   tasks:
     - name: "1. Thu thập thông tin Datastore khả dụng"
-      datastore_info:
+      community.vmware.vmware_datastore_info:
         validate_certs: false
       register: datastore_info
 
