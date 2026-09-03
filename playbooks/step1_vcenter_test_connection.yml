@@ -19,6 +19,13 @@
     - name: "2. Hiển thị thông tin vCenter kết nối thành công"
       ansible.builtin.debug:
         msg:
-          - "--> Trạng thái: KẾT NỐI VCENTER THÀNH CÔNG!"
-          - "Thông tin chi tiết vCenter: {{ vcenter_info.about_info | default(vcenter_info) }}"
+          - "=========================================================="
+          - "--> Trạng thái: KẾT NỐI VCENTER THÀNH CÔNG!                "
+          - "=========================================================="
+          - " Sản phẩm        : {{ vcenter_info.about_info.product_full_name }}"
+          - " Phiên bản vSphere: {{ vcenter_info.about_info.version }} (Build {{ vcenter_info.about_info.build }})"
+          - " Phiên bản API   : {{ vcenter_info.about_info.api_version }}"
+          - " Cổng kết nối API : {{ vcenter_info.about_info.api_type }}"
+          - " Hệ điều hành VCSA: {{ vcenter_info.about_info.os_type }}"
+          - " vCenter UUID    : {{ vcenter_info.about_info.instance_uuid }}"
 ...
