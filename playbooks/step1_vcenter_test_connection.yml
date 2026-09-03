@@ -2,18 +2,17 @@
 # ==============================================================================
 # BƯỚC 1: KIỂM TRA KẾT NỐI API VCENTER
 # Job Template AWX: 01-vCenter-Test-Connection
+# Sử dụng module: community.vmware.vmware_about_info
 # ==============================================================================
 
 - name: "[STEP 1] Kiểm tra kết nối vCenter API"
   hosts: localhost
   gather_facts: false
   connection: local
-  collections:
-    - vmware.vmware
 
   tasks:
     - name: "1. Thử nghiệm kết nối vCenter API"
-      vmware.vmware.about_info:
+      community.vmware.vmware_about_info:
         validate_certs: false
       register: vcenter_info
 
