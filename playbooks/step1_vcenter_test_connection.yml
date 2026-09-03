@@ -2,7 +2,6 @@
 # ==============================================================================
 # BƯỚC 1: KIỂM TRA KẾT NỐI API VCENTER
 # Job Template AWX: 01-vCenter-Test-Connection
-# Credentials được tự động nạp từ AWX (VMWARE_HOST, VMWARE_USER, VMWARE_PASSWORD)
 # ==============================================================================
 
 - name: "[STEP 1] Kiểm tra kết nối vCenter API"

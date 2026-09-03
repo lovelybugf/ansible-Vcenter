@@ -285,19 +285,6 @@ Ansible cung cấp các công cụ mạnh mẽ để thao tác, biến đổi v�
 *   **Vòng lặp chờ điều kiện (`until`):** Chạy lặp lại task cho tới khi thỏa mãn điều kiện (kết hợp `retries` và `delay`). Thích hợp để chờ dịch vụ hoặc cổng mạng khởi động thành công.
 *   **Vòng lặp lồng nhau (`subelements`):** Duyệt qua cấu trúc dữ liệu phức tạp (như danh sách người dùng đi kèm với danh sách SSH keys tương ứng của từng người).
 
-#### 4. Sử dụng Bộ lọc Địa chỉ Mạng (ansible.utils.ipaddr)
-*   Yêu cầu thư viện Python `netaddr` trên máy chạy.
-*   **Xác thực và phân loại:**
-    *   `ip | ansible.utils.ipaddr`: Trả về IP nếu hợp lệ, ngược lại trả về `false`.
-    *   `list_ips | ansible.utils.ipaddr('private')`: Lọc riêng các IP thuộc dải riêng tư (RFC 1918).
-    *   `list_ips | ansible.utils.ipwrap`: Tự động bọc dấu ngoặc vuông `[...]` quanh IPv6 (phục vụ viết file config).
-*   **Phân tách thông tin IP:**
-    *   Tách chi tiết: `address` (IP), `netmask` (Subnet mask), `prefix` (CIDR), `network` (Mạng), `broadcast` (Quảng bá), `revdns` (Phân giải ngược PTR).
-*   **Tính toán dải mạng:**
-    *   Lấy IP thứ N trong mạng: `network | ansible.utils.ipaddr(N)`.
-    *   Dải IP khả dụng: `network | ansible.utils.ipaddr('range_usable')`.
-    *   Gộp mạng tối giản: `list_subnets | ansible.utils.cidr_merge`.
-
 ---
 ## Ⅺ. ĐIỀU PHỐI CẬP NHẬT CUỐN CHIẾU (CHƯƠNG 8)
 ### Chiến lược nâng cấp hệ thống giảm thiểu tối đa thời gian gián đoạn (Zero Downtime)

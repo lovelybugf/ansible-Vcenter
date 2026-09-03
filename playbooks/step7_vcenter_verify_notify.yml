@@ -27,7 +27,7 @@
         vm_power_state: "{{ vm_facts.instance.hw_power_status }}"
         vm_ip_addr: "{{ vm_facts.instance.ipv4 | default('Đang khởi động dịch vụ mạng') }}"
 
-    - name: "3. Gửi thông báo kết quả khởi tạo (MOCK Notification Response)"
+    - name: "3. Gửi thông báo kết quả khởi tạo"
       ansible.builtin.debug:
         msg:
           - "=========================================================="
