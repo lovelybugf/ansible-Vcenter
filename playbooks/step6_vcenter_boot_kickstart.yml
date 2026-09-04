@@ -13,10 +13,11 @@
   vars:
     vm_name_val: "{{ vm_name | default('nampd-demo-vm') }}"
     datacenter_val: "{{ vm_datacenter | default('Amigo') }}"
-    iso_path_val: "{{ kickstart_iso_path | default('[vsanDatastore] RHEL/kickstart.iso') }}"
+    rhel_iso_val: "{{ rhel_iso_path | default('[vsanDatastore] RHEL/rhel-9.3-x86_64-dvd.iso') }}"
+    kickstart_iso_val: "{{ kickstart_iso_path | default('[vsanDatastore] RHEL/kickstart.iso') }}"
 
   tasks:
-    - name: "1. Gắn file ISO Kickstart vào ổ CD-ROM của máy ảo"
+    - name: "1. Gắn đĩa ISO RedHat DVD (Ổ CD 1) và Kickstart ISO (Ổ CD 2)"
       community.vmware.vmware_guest:
         validate_certs: false
         datacenter: "{{ datacenter_val }}"
@@ -24,7 +25,10 @@
         state: present
         cdrom:
           - type: iso
-            iso_path: "{{ iso_path_val }}"
+            iso_path: "{{ rhel_iso_val }}"
+            state: present
+          - type: iso
+            iso_path: "{{ kickstart_iso_val }}"
             state: present
       register: cdrom_res
 
