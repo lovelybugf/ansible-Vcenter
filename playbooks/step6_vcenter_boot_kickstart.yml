@@ -12,12 +12,14 @@
 
   vars:
     vm_name_val: "{{ vm_name | default('nampd-demo-vm') }}"
+    datacenter_val: "{{ vm_datacenter | default('Amigo') }}"
     iso_path_val: "{{ kickstart_iso_path | default('[vsanDatastore] RHEL/kickstart.iso') }}"
 
   tasks:
     - name: "1. Gắn file ISO Kickstart vào ổ CD-ROM của máy ảo"
       community.vmware.vmware_guest:
         validate_certs: false
+        datacenter: "{{ datacenter_val }}"
         name: "{{ vm_name_val }}"
         state: present
         cdrom:
@@ -29,6 +31,7 @@
     - name: "2. Khởi động máy ảo (Power On) để bắt đầu tiến trình tự động cài RHEL"
       community.vmware.vmware_guest:
         validate_certs: false
+        datacenter: "{{ datacenter_val }}"
         name: "{{ vm_name_val }}"
         state: poweredon
       register: poweron_res

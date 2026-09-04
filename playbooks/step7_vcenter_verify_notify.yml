@@ -12,11 +12,13 @@
 
   vars:
     vm_name_val: "{{ vm_name | default('nampd-demo-vm') }}"
+    datacenter_val: "{{ vm_datacenter | default('Amigo') }}"
 
   tasks:
     - name: "1. Chờ máy ảo lên trạng thái PoweredOn và nhận diện địa chỉ IP (Tối đa 5 phút)"
       community.vmware.vmware_guest_info:
         validate_certs: false
+        datacenter: "{{ datacenter_val }}"
         name: "{{ vm_name_val }}"
       register: vm_facts
       until: vm_facts.instance.hw_power_status == "POWERED-ON"
