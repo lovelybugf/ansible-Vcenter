@@ -12,7 +12,7 @@
 
   vars:
     vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
-    iso_path_val: "{{ kickstart_iso_path | default('[datastore1] iso/rhel_kickstart.iso') }}"
+    iso_path_val: "{{ kickstart_iso_path | default('[vsanDatastore] RHEL/kickstart.iso') }}"
 
   tasks:
     - name: "1. Gắn file ISO Kickstart vào ổ CD-ROM của máy ảo"
