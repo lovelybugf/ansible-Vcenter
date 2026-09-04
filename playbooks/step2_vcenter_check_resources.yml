@@ -18,7 +18,7 @@
   tasks:
     - name: "1a. Thu thập thông tin Cluster (CPU & RAM)"
       community.vmware.vmware_cluster_info:
-        datacenter: "{{ vm_datacenter | default(vcenter_datacenter | default('Amigo')) }}"
+        datacenter: "{{ vm_datacenter | default('Amigo') }}"
         validate_certs: false
       register: cluster_info
       ignore_errors: true
