@@ -11,7 +11,7 @@
   connection: local
 
   vars:
-    target_vm_name: "{{ vm_name | default('rhel-demo-vm') }}"
+    target_vm_name: "{{ vm_name | default('nampd-demo-vm') }}"
 
   tasks:
     - name: "1. Thu thập danh sách máy ảo đang có trên vCenter"

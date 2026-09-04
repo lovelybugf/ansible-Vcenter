@@ -11,7 +11,7 @@
   connection: local
 
   vars:
-    vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
+    vm_name_val: "{{ vm_name | default('nampd-demo-vm') }}"
 
   tasks:
     - name: "1. Chờ máy ảo lên trạng thái PoweredOn và nhận diện địa chỉ IP (Tối đa 5 phút)"

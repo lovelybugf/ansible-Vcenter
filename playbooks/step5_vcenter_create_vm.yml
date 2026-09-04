@@ -11,9 +11,9 @@
   connection: local
 
   vars:
-    vm_name_val: "{{ vm_name | default('rhel-demo-vm') }}"
-    datacenter_val: "{{ vm_datacenter | default('Datacenter') }}"
-    datastore_val: "{{ selected_datastore | default('datastore1') }}"
+    vm_name_val: "{{ vm_name | default('nampd-demo-vm') }}"
+    datacenter_val: "{{ vm_datacenter | default('Amigo') }}"
+    datastore_val: "{{ selected_datastore | default(vm_datastore | default('vsanDatastore')) }}"
     num_cpus_val: "{{ vm_num_cpus | default(2) | int }}"
     memory_mb_val: "{{ vm_memory_mb | default(4096) | int }}"
     disk_size_gb_val: "{{ vm_disk_gb | default(40) | int }}"
