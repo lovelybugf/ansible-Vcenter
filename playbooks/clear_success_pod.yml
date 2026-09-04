@@ -6,21 +6,22 @@
   gather_facts: false
 
   vars:
-    # Namespace can kiem tra (mac dinh 'awx', co the truyen tu AWX extra_vars)
-    target_namespace: "{{ k8s_namespace | default('awx') }}"
+    target_namespace: "awx"
 
   tasks:
-    - name: 1. Tim kiem cac Pod o trang thai Succeeded (Thanh cong)
+    - name: 1. Tim kiem cac Pod Runner AWX o trang thai Succeeded (Thanh cong)
       kubernetes.core.k8s_info:
         kind: Pod
         namespace: "{{ target_namespace }}"
+        label_selectors:
+          - "app.kubernetes.io/managed-by=awx"  # Chi loc dung cac Pod do AWX Job sinh ra
         field_selectors:
           - status.phase=Succeeded
       register: succeeded_pods
 
     - name: 2. Hien thi so luong Pod thanh cong tim duoc
       ansible.builtin.debug:
-        msg: "Tim thay {{ succeeded_pods.resources | length }} Pod thanh cong trong namespace '{{ target_namespace }}'."
+        msg: "Tim thay {{ succeeded_pods.resources | length }} Pod AWX Job thanh cong trong namespace '{{ target_namespace }}'."
 
     - name: 3. Xoa cac Pod da thanh cong
       kubernetes.core.k8s:

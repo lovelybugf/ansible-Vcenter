@@ -6,16 +6,17 @@
   gather_facts: false
 
   vars:
-    # Namespace can kiem tra (mac dinh 'awx', co the truyen tu AWX extra_vars)
-    target_namespace: "{{ k8s_namespace | default('awx') }}"
+    target_namespace: "awx"
     # Thoi gian toi da cho phep Pod loi ton tai: 1 ngay = 86400 giay (24h * 3600s)
     max_age_seconds: 86400
 
   tasks:
-    - name: 1. Tim kiem cac Pod o trang thai Failed (Loi)
+    - name: 1. Tim kiem cac Pod Runner AWX o trang thai Failed (Loi)
       kubernetes.core.k8s_info:
         kind: Pod
         namespace: "{{ target_namespace }}"
+        label_selectors:
+          - "app.kubernetes.io/managed-by=awx"  # Chi loc dung cac Pod Runner do AWX sinh ra
         field_selectors:
           - status.phase=Failed
       register: failed_pods
@@ -35,7 +36,7 @@
 
     - name: 3. Hien thi danh sach Pod bi loi qua 24h can xoa
       ansible.builtin.debug:
-        msg: "Tim thay {{ old_failed_pods | length }} Pod bi loi qua 24h trong namespace '{{ target_namespace }}': {{ old_failed_pods }}"
+        msg: "Tim thay {{ old_failed_pods | length }} Pod AWX Job bi loi qua 24h trong namespace '{{ target_namespace }}': {{ old_failed_pods }}"
 
     - name: 4. Xoa cac Pod bi loi qua 24h
       kubernetes.core.k8s:
