@@ -47,4 +47,6 @@
           - " Yêu cầu RAM        : {{ req_ram_mb }} MB"
           - " Yêu cầu Đĩa        : {{ req_disk_gb }} GB"
           - " Số Datastore hợp lệ: {{ available_datastores | length }}"
+          - " Danh sách các Datastore đạt điều kiện đĩa trống:"
+          - "{% for ds in available_datastores %}  * Datastore: {{ ds.name }} | Dung lượng trống: {{ (ds.freeSpace / 1073741824) | round(2) }} GB (Loại: {{ ds.type }}){% endfor %}"
 ...
