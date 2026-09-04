@@ -13,6 +13,8 @@
   vars:
     vm_name_val: "{{ vm_name | default('nampd-demo-vm') }}"
     datacenter_val: "{{ vm_datacenter | default('Amigo') }}"
+    cluster_val: "{{ vm_cluster | default('Amigo 2') }}"
+    folder_val: "{{ vm_folder | default('Software-2') }}"
     datastore_val: "{{ selected_datastore | default('vsanDatastore') }}"
     num_cpus_val: "{{ vm_num_cpus | default(2) | int }}"
     memory_mb_val: "{{ vm_memory_mb | default(4096) | int }}"
@@ -25,6 +27,8 @@
         validate_certs: false
         name: "{{ vm_name_val }}"
         datacenter: "{{ datacenter_val }}"
+        cluster: "{{ cluster_val }}"
+        folder: "{{ folder_val }}"
         datastore: "{{ datastore_val }}"
         guest_id: "{{ guest_os_id }}"
         state: poweredoff
