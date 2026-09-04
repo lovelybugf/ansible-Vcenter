@@ -27,9 +27,15 @@
           - type: iso
             iso_path: "{{ rhel_iso_val }}"
             state: present
+            controller_type: ide
+            controller_number: 0
+            unit_number: 0
           - type: iso
             iso_path: "{{ kickstart_iso_val }}"
             state: present
+            controller_type: ide
+            controller_number: 0
+            unit_number: 1
       register: cdrom_res
 
     - name: "2. Khởi động máy ảo (Power On) để bắt đầu tiến trình tự động cài RHEL"

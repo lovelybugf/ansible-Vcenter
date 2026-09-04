@@ -46,9 +46,15 @@
           - type: iso
             iso_path: "{{ rhel_iso_val }}"
             state: present
+            controller_type: ide
+            controller_number: 0
+            unit_number: 0
           - type: iso
             iso_path: "{{ kickstart_iso_val }}"
             state: present
+            controller_type: ide
+            controller_number: 0
+            unit_number: 1
         networks: []
       register: vm_create_res
 
