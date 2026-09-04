@@ -1,0 +1,34 @@
+---
+- name: Tu dong don dep cac Pod Job da thanh cong (Succeeded)
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+
+  vars:
+    # Namespace can kiem tra (mac dinh 'awx', co the truyen tu AWX extra_vars)
+    target_namespace: "{{ k8s_namespace | default('awx') }}"
+
+  tasks:
+    - name: 1. Tim kiem cac Pod o trang thai Succeeded (Thanh cong)
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: "{{ target_namespace }}"
+        field_selectors:
+          - status.phase=Succeeded
+      register: succeeded_pods
+
+    - name: 2. Hien thi so luong Pod thanh cong tim duoc
+      ansible.builtin.debug:
+        msg: "Tim thay {{ succeeded_pods.resources | length }} Pod thanh cong trong namespace '{{ target_namespace }}'."
+
+    - name: 3. Xoa cac Pod da thanh cong
+      kubernetes.core.k8s:
+        state: absent
+        kind: Pod
+        namespace: "{{ target_namespace }}"
+        name: "{{ item.metadata.name }}"
+      loop: "{{ succeeded_pods.resources }}"
+      when: (succeeded_pods.resources | default([])) | length > 0
+      loop_control:
+        label: "{{ item.metadata.name }}"

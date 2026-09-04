@@ -1,0 +1,49 @@
+---
+- name: Tu dong don dep cac Pod bi loi (Failed) sau 1 ngay (24h)
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+
+  vars:
+    # Namespace can kiem tra (mac dinh 'awx', co the truyen tu AWX extra_vars)
+    target_namespace: "{{ k8s_namespace | default('awx') }}"
+    # Thoi gian toi da cho phep Pod loi ton tai: 1 ngay = 86400 giay (24h * 3600s)
+    max_age_seconds: 86400
+
+  tasks:
+    - name: 1. Tim kiem cac Pod o trang thai Failed (Loi)
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: "{{ target_namespace }}"
+        field_selectors:
+          - status.phase=Failed
+      register: failed_pods
+
+    - name: 2. Loc danh sach cac Pod bi loi da ton tai hon 1 ngay
+      ansible.builtin.set_fact:
+        old_failed_pods: >-
+          [
+            {% for pod in failed_pods.resources %}
+              {% set pod_time = pod.metadata.creationTimestamp | to_datetime('%Y-%m-%dT%H:%M:%SZ') %}
+              {% set age = (now(utc=True) - pod_time).total_seconds() %}
+              {% if age >= (max_age_seconds | int) %}
+                "{{ pod.metadata.name }}",
+              {% endif %}
+            {% endfor %}
+          ]
+
+    - name: 3. Hien thi danh sach Pod bi loi qua 24h can xoa
+      ansible.builtin.debug:
+        msg: "Tim thay {{ old_failed_pods | length }} Pod bi loi qua 24h trong namespace '{{ target_namespace }}': {{ old_failed_pods }}"
+
+    - name: 4. Xoa cac Pod bi loi qua 24h
+      kubernetes.core.k8s:
+        state: absent
+        kind: Pod
+        namespace: "{{ target_namespace }}"
+        name: "{{ item }}"
+      loop: "{{ old_failed_pods }}"
+      when: old_failed_pods | length > 0
+      loop_control:
+        label: "{{ item }}"
