@@ -20,9 +20,10 @@
     memory_mb_val: "{{ vm_memory_mb | default(4096) | int }}"
     disk_size_gb_val: "{{ vm_disk_gb | default(40) | int }}"
     guest_os_id: "{{ vm_guest_id | default('rhel8_64Guest') }}"
+    iso_path_val: "{{ kickstart_iso_path | default('[vsanDatastore] RHEL/kickstart.iso') }}"
 
   tasks:
-    - name: "1. Khởi tạo máy ảo với thông số tùy chỉnh (Không thêm Card mạng)"
+    - name: "1. Khởi tạo máy ảo với thông số tùy chỉnh (Bao gồm ổ CD-ROM ISO)"
       community.vmware.vmware_guest:
         validate_certs: false
         name: "{{ vm_name_val }}"
@@ -40,6 +41,10 @@
           - size_gb: "{{ disk_size_gb_val }}"
             type: thin
             datastore: "{{ datastore_val }}"
+        cdrom:
+          - type: iso
+            iso_path: "{{ iso_path_val }}"
+            state: present
         networks: []
       register: vm_create_res
 
