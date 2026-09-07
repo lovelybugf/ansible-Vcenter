@@ -1,24 +1,31 @@
 ---
-plugin: community.vmware.vmware_vm_inventory
+# Inventory plugin mới chuẩn Red Hat AAP / AWX: vmware.vmware.vms
+plugin: vmware.vmware.vms
 strict: false
 validate_certs: false
 
-# Nap tag va cac thuoc tinh tuy chinh cua vCenter
-with_tags: true
-with_custom_values: true
-with_metadata: true
+# Thu thập tags và thuộc tính mở rộng của vCenter
+gather_tags: true
+
+# Các thuộc tính vCenter cần thu thập
+properties:
+  - name
+  - config.name
+  - guest.guestId
+  - summary.runtime.powerState
 
 compose:
   ansible_user: "'root'"
   ansible_connection: "'ssh'"
 
-# Tu dong tao cac nhom con de phan loai may ao trong inventory
+# Tự động phân nhóm máy ảo theo trạng thái và loại OS
 keyed_groups:
   - key: summary.runtime.powerState
     prefix: power_state
   - key: guest.guestId
     prefix: os_type
-# Bo loc: Chi nhan cac may ao co chu 'nampd' trong ten (khong phan biet hoa thuong)
-filters:
-  - "'nampd' in config.name.lower()"
+
+# Bộ lọc: Loại bỏ các VM KHÔNG chứa chữ 'nampd' trong tên (chỉ giữ lại VM của nampd)
+filter_expressions:
+  - "'nampd' not in name.lower()"
 ...
