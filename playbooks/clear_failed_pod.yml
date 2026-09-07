@@ -21,30 +21,14 @@
           - status.phase=Failed
       register: failed_pods
 
-    - name: 2. Loc danh sach cac Pod bi loi da ton tai hon 1 ngay
-      ansible.builtin.set_fact:
-        old_failed_pods: >-
-          {%- set res = [] -%}
-          {%- for pod in failed_pods.resources -%}
-            {%- set pod_time = pod.metadata.creationTimestamp | to_datetime('%Y-%m-%dT%H:%M:%SZ') -%}
-            {%- set age = (now(utc=True) - pod_time).total_seconds() -%}
-            {%- if age >= (max_age_seconds | int) -%}
-              {%- set _ = res.append(pod.metadata.name) -%}
-            {%- endif -%}
-          {%- endfor -%}
-          {{ res }}
-
-    - name: 3. Hien thi danh sach Pod bi loi qua 24h can xoa
-      ansible.builtin.debug:
-        msg: "Tim thay {{ old_failed_pods | length }} Pod AWX Job bi loi qua 24h trong namespace '{{ target_namespace }}': {{ old_failed_pods }}"
-
-    - name: 4. Xoa cac Pod bi loi qua 24h
+    - name: 2. Xoa cac Pod bi loi qua 24h
       kubernetes.core.k8s:
         state: absent
         kind: Pod
         namespace: "{{ target_namespace }}"
-        name: "{{ item }}"
-      loop: "{{ old_failed_pods }}"
-      when: old_failed_pods | length > 0
+        name: "{{ item.metadata.name }}"
+      loop: "{{ failed_pods.resources }}"
+      when:
+        - (now(utc=True) - (item.metadata.creationTimestamp | to_datetime('%Y-%m-%dT%H:%M:%SZ'))).total_seconds() >= (max_age_seconds | int)
       loop_control:
-        label: "{{ item }}"
+        label: "{{ item.metadata.name }}"
