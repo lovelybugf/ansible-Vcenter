@@ -3,9 +3,11 @@ ansible-navigator:
   execution-environment:
     container-engine: podman
     enabled: true
-    image: quay-ssc2.local.amigo.com/admin/nampd-vmware-ee:v1.2
+    image: quay-ssc2.local.amigo.com/admin/nampd-vmware-ee:4.8.5
     pull:
-      policy: missing
+      # The private registry uses an internal CA. Pull this image with
+      # scripts/pull-ee before its first use.
+      policy: never
     environment-variables:
       pass:
         - VMWARE_HOST

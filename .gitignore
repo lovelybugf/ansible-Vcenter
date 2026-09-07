@@ -19,4 +19,6 @@ collections/ansible_collections/
 env.sh
 AU374/
 fact_cache/
+.venv/
+.navigator-tmp/
 
