@@ -42,4 +42,22 @@
           - " Kết nối vCenter  : OK"
           - " Tiến trình Boot  : Kickstart ISO RHEL thành công"
           - " Phản hồi thông báo: Đã gửi tín hiệu Success về hệ thống."
+
+    - name: "4. Gửi phản hồi kết quả và đổi trạng thái Ticket sang Resolved trên ManageEngine SDP"
+      ansible.builtin.uri:
+        url: "https://192.168.51.51:8080/api/v3/requests/{{ sdp_ticket_id }}"
+        method: PUT
+        validate_certs: false
+        status_code: [200, 201]
+        headers:
+          TECHNICIAN_KEY: "{{ sdp_technician_key | default('B18290AC-128B-4819-A192-881920192A9F') }}"
+          Accept: "application/v3+json"
+        body_format: json
+        body:
+          request:
+            status:
+              name: "Resolved"
+            description: "Máy ảo {{ vm_name_val }} đã khởi tạo thành công trên vCenter! IP: {{ vm_ip_addr }}. Trạng thái Vulnerability Management: COMPLIANT."
+      when: sdp_ticket_id is defined and (sdp_ticket_id | string | length > 0)
+      ignore_errors: true
 ...
